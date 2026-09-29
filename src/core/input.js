@@ -191,7 +191,12 @@ export class Input {
     const pads = navigator.getGamepads?.() ?? [];
     const pad = pads[this.gamepadIndex ?? 0] ?? pads.find(Boolean);
     if (!pad) {
-      this.stick.moveX = this.stick.moveY = this.stick.lookX = this.stick.lookY = 0;
+      // CRITICAL: on mobile the virtual stick owns moveX/moveY.
+      if (!this.mobile) {
+        this.stick.moveX = this.stick.moveY = this.stick.lookX = this.stick.lookY = 0;
+      } else {
+        this.stick.lookX = this.stick.lookY = 0;
+      }
       return;
     }
     const dz = (v) => (Math.abs(v) < 0.16 ? 0 : (v - Math.sign(v) * 0.16) / 0.84);
@@ -262,6 +267,7 @@ export class Input {
   _setupTouch() {
     const ui = document.getElementById('touch-ui');
     if (ui) ui.classList.add('on');
+    this._stickZone = document.getElementById('stick-zone');
     this._stickBase = document.getElementById('stick-base');
     this._stickKnob = document.getElementById('stick-knob');
     this._lookZone = document.getElementById('look-zone');
@@ -270,22 +276,30 @@ export class Input {
     this._btnReload = document.getElementById('btn-reload');
     this._btnAds = document.getElementById('btn-ads');
     this._touchLookScale = 3.2;
-    this._stickRadius = 72;
-    const on = (el, type, fn, opts) => el && el.addEventListener(type, fn, opts || { passive: false });
-    on(this._stickBase, 'touchstart', (e) => {
+    this._stickRadius = 140;
+    this._touchStickId = null;
+    this._touchLookId = null;
+    this._lookLast = null;
+    const on = (el, type, fn, opts) => { if (el) el.addEventListener(type, fn, opts || { passive: false }); };
+    const stickEl = this._stickZone || this._stickBase;
+    on(stickEl, 'touchstart', (e) => {
       e.preventDefault(); e.stopPropagation();
       const t = e.changedTouches[0];
       this._touchStickId = t.identifier;
-      this._stickOrigin.x = t.clientX;
-      this._stickOrigin.y = t.clientY;
+      if (this._stickBase) {
+        const r = this._stickBase.getBoundingClientRect();
+        this._stickOrigin.x = r.left + r.width * 0.5;
+        this._stickOrigin.y = r.top + r.height * 0.5;
+      } else {
+        this._stickOrigin.x = t.clientX; this._stickOrigin.y = t.clientY;
+      }
       this._updateStick(t.clientX, t.clientY);
     });
-    this._lookLast = null;
     on(this._lookZone, 'touchstart', (e) => {
-      e.preventDefault();
-      const t = e.changedTouches[0];
       const tag = e.target && e.target.id;
       if (tag === 'btn-fire' || tag === 'btn-jump' || tag === 'btn-reload' || tag === 'btn-ads') return;
+      e.preventDefault();
+      const t = e.changedTouches[0];
       this._touchLookId = t.identifier;
       this._lookLast = { x: t.clientX, y: t.clientY };
     });
@@ -317,9 +331,10 @@ export class Input {
     hold(this._btnReload, 'KeyR');
     hold(this._btnAds, 'Mouse2');
     this.pointerLocked = true;
+    console.info('[input] mobile touch controls active');
   }
   _updateStick(clientX, clientY) {
-    const maxR = this._stickRadius || 72;
+    const maxR = this._stickRadius || 140;
     let dx = clientX - this._stickOrigin.x;
     let dy = clientY - this._stickOrigin.y;
     const len = Math.hypot(dx, dy) || 1;
@@ -340,6 +355,7 @@ export class Input {
       }
     }
   }
+
 
 
 }
