@@ -17,7 +17,7 @@ import { createComposite, createFxaa, createDebug, createViewComposite } from '.
 import { buildFallbackEnvironment } from './env.js';
 import { RenderProbeScene } from './probe.js';
 
-const QUALITY_LEVEL = { low: 0, medium: 1, high: 2, ultra: 3 };
+const QUALITY_LEVEL = { mobile: 0, low: 0, medium: 1, high: 2, ultra: 3 };
 
 /**
  * Registration range at or below which a punctual light counts as a room/street
@@ -130,7 +130,7 @@ export class RenderSystem {
     const cfg = ctx.config;
     const q = cfg.q;
     this.q = q;
-    this.qLevel = QUALITY_LEVEL[cfg.quality] ?? 3;
+    this.qLevel = QUALITY_LEVEL[cfg.quality] ?? 0;
     this.rng = ctx.rng.fork();
     this.frame = 0;
 
@@ -213,7 +213,11 @@ export class RenderSystem {
     // EV100 -5.2, and letting the meter chase that turns night into an overcast
     // afternoon. Daylight shots meter between -1 and -2.1, so this only ever
     // binds after dark.
-    this.exposure.setLimits(-4.3, 20);
+    if (cfg.mobile || cfg.quality === 'mobile' || cfg.quality === 'low') {
+      this.exposure.setLimits(-1.5, 12);
+    } else {
+      this.exposure.setLimits(-4.3, 20);
+    }
     this.lut = createGradeLut('default');
     this.composite = createComposite(this.lut);
     this.viewComposite = createViewComposite();
@@ -459,7 +463,15 @@ export class RenderSystem {
       shadowStrength: 1.0,
       sunSoftness: 0.024,
     };
-    this._applySettings();
+    
+    // MOBILE_SAFE_EXPOSURE (must run AFTER settings object exists)
+    if (cfg.mobile || cfg.quality === 'mobile' || cfg.quality === 'low') {
+      this.settings.autoExposure = false;
+      this.settings.exposureBias = 1.35;
+      this.settings.exposureKey = 0.5;
+      this.settings.bloomStrength = Math.min(this.settings.bloomStrength || 0, 0.05);
+    }
+this._applySettings();
 
     this.probe = new RenderProbeScene(this.rng.fork());
     this.probeActive = false;

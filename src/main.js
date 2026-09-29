@@ -32,7 +32,7 @@ const isMobile =
       matchMedia('(pointer: coarse)').matches ||
       /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)));
 
-const defaultQuality = isMobile ? 'mobile' : 'medium';
+const defaultQuality = isMobile ? 'low' : 'medium';
 const config = createConfig({
   quality: params.get('q') ?? defaultQuality,
   deterministic: capture,
@@ -41,7 +41,10 @@ const config = createConfig({
   maxSubsteps: isMobile ? 24 : undefined,
 });
 window.__MOBILE__ = isMobile;
-if (isMobile) config.sensitivity = Math.min(config.sensitivity, 0.0016);
+if (isMobile) {
+  config.sensitivity = Math.min(config.sensitivity, 0.0016);
+  config.exposure = 0.75;
+}
 console.info('[boot] quality=%s mobile=%s sens=%s', config.quality, isMobile, config.sensitivity);
 
 const canvas = document.getElementById('game');
