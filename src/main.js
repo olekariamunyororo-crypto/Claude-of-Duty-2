@@ -39,7 +39,7 @@ const config = createConfig({
   mobile: isMobile,
 });
 window.__MOBILE__ = isMobile;
-if (isMobile) config.sensitivity = Math.max(config.sensitivity, 0.0035);
+if (isMobile) config.sensitivity = Math.max(config.sensitivity, 0.0025);
 console.info('[boot] quality=%s mobile=%s sens=%s', config.quality, isMobile, config.sensitivity);
 
 const canvas = document.getElementById('game');
