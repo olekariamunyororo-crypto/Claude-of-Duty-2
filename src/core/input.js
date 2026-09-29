@@ -268,61 +268,62 @@ export class Input {
     this._btnFire = document.getElementById('btn-fire');
     this._btnJump = document.getElementById('btn-jump');
     this._btnReload = document.getElementById('btn-reload');
+    this._btnAds = document.getElementById('btn-ads');
+    this._touchLookScale = 10;
+    this._stickRadius = 56;
     const on = (el, type, fn, opts) => el && el.addEventListener(type, fn, opts || { passive: false });
     on(this._stickBase, 'touchstart', (e) => {
-      e.preventDefault();
+      e.preventDefault(); e.stopPropagation();
       const t = e.changedTouches[0];
       this._touchStickId = t.identifier;
-      const r = this._stickBase.getBoundingClientRect();
-      this._stickOrigin.x = r.left + r.width / 2;
-      this._stickOrigin.y = r.top + r.height / 2;
+      this._stickOrigin.x = t.clientX;
+      this._stickOrigin.y = t.clientY;
       this._updateStick(t.clientX, t.clientY);
     });
-    on(window, 'touchmove', (e) => {
-      for (const t of e.changedTouches) {
-        if (t.identifier === this._touchStickId) { e.preventDefault(); this._updateStick(t.clientX, t.clientY); }
-      }
-    }, { passive: false });
-    on(window, 'touchend', (e) => this._touchEnd(e));
-    on(window, 'touchcancel', (e) => this._touchEnd(e));
-    let lastLook = null;
+    this._lookLast = null;
     on(this._lookZone, 'touchstart', (e) => {
       e.preventDefault();
       const t = e.changedTouches[0];
+      const tag = e.target && e.target.id;
+      if (tag === 'btn-fire' || tag === 'btn-jump' || tag === 'btn-reload' || tag === 'btn-ads') return;
       this._touchLookId = t.identifier;
-      lastLook = { x: t.clientX, y: t.clientY };
+      this._lookLast = { x: t.clientX, y: t.clientY };
     });
-    on(this._lookZone, 'touchmove', (e) => {
+    on(window, 'touchmove', (e) => {
+      let used = false;
       for (const t of e.changedTouches) {
-        if (t.identifier !== this._touchLookId) continue;
-        e.preventDefault();
-        if (lastLook) {
-          this._rawLook.x += (t.clientX - lastLook.x) * 1.6;
-          this._rawLook.y += (t.clientY - lastLook.y) * 1.6;
+        if (t.identifier === this._touchStickId) {
+          used = true; this._updateStick(t.clientX, t.clientY);
+        } else if (t.identifier === this._touchLookId && this._lookLast) {
+          used = true;
+          const s = this._touchLookScale;
+          this._rawLook.x += (t.clientX - this._lookLast.x) * s;
+          this._rawLook.y += (t.clientY - this._lookLast.y) * s;
+          this._lookLast = { x: t.clientX, y: t.clientY };
         }
-        lastLook = { x: t.clientX, y: t.clientY };
       }
+      if (used) e.preventDefault();
     }, { passive: false });
-    on(this._lookZone, 'touchend', () => { this._touchLookId = null; lastLook = null; });
-    on(this._lookZone, 'touchcancel', () => { this._touchLookId = null; lastLook = null; });
+    on(window, 'touchend', (e) => this._touchEnd(e));
+    on(window, 'touchcancel', (e) => this._touchEnd(e));
     const hold = (el, code) => {
       if (!el) return;
-      const down = (e) => { e.preventDefault(); this._pendingDown.add(code); };
-      const up = (e) => { e.preventDefault(); this._pendingUp.add(code); };
+      const down = (e) => { e.preventDefault(); e.stopPropagation(); this._pendingDown.add(code); };
+      const up = (e) => { e.preventDefault(); e.stopPropagation(); this._pendingUp.add(code); };
       on(el, 'touchstart', down); on(el, 'touchend', up); on(el, 'touchcancel', up);
     };
     hold(this._btnFire, 'Mouse0');
     hold(this._btnJump, 'Space');
     hold(this._btnReload, 'KeyR');
+    hold(this._btnAds, 'Mouse2');
     this.pointerLocked = true;
   }
   _updateStick(clientX, clientY) {
-    const maxR = 48;
+    const maxR = this._stickRadius || 56;
     let dx = clientX - this._stickOrigin.x;
     let dy = clientY - this._stickOrigin.y;
     const len = Math.hypot(dx, dy) || 1;
-    const scale = Math.min(1, maxR / len);
-    dx *= scale; dy *= scale;
+    if (len > maxR) { dx = (dx / len) * maxR; dy = (dy / len) * maxR; }
     this.stick.moveX = dx / maxR;
     this.stick.moveY = dy / maxR;
     if (this._stickKnob) this._stickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
@@ -334,8 +335,11 @@ export class Input {
         this.stick.moveX = 0; this.stick.moveY = 0;
         if (this._stickKnob) this._stickKnob.style.transform = 'translate(0,0)';
       }
-      if (t.identifier === this._touchLookId) this._touchLookId = null;
+      if (t.identifier === this._touchLookId) {
+        this._touchLookId = null; this._lookLast = null;
+      }
     }
   }
+
 
 }
