@@ -133,21 +133,31 @@ export class Engine {
 
     this.input.beginFrame();
 
-    this._accum += t.dt;
-    let steps = 0;
-    let fixedDt = this._fixedDt;
-    const maxSub = this._maxSubsteps;
-    if (this._accum > fixedDt * maxSub) {
-      fixedDt = this._accum / maxSub;
-    }
     const fixedSystems = this.registry.with('fixedUpdate');
-    while (this._accum >= fixedDt && steps < maxSub) {
-      for (const sys of fixedSystems) sys.fixedUpdate(fixedDt, this.ctx);
-      this._accum -= fixedDt;
-      steps++;
+    // Mobile: one variable physics step per frame → sim time == wall clock.
+    if (this.config.mobile) {
+      const h = Math.min(Math.max(t.dt, 0), 0.05);
+      if (h > 1e-6 && t.scale > 0) {
+        for (const sys of fixedSystems) sys.fixedUpdate(h, this.ctx);
+      }
+      this._accum = 0;
+      t.alpha = 0;
+    } else {
+      this._accum += t.dt;
+      let steps = 0;
+      let fixedDt = this._fixedDt;
+      const maxSub = this._maxSubsteps;
+      if (this._accum > fixedDt * maxSub) {
+        fixedDt = this._accum / maxSub;
+      }
+      while (this._accum >= fixedDt && steps < maxSub) {
+        for (const sys of fixedSystems) sys.fixedUpdate(fixedDt, this.ctx);
+        this._accum -= fixedDt;
+        steps++;
+      }
+      if (steps === maxSub) this._accum = 0;
+      t.alpha = fixedDt > 0 ? this._accum / fixedDt : 0;
     }
-    if (steps === maxSub) this._accum = 0;
-    t.alpha = fixedDt > 0 ? this._accum / fixedDt : 0;
 
     for (const sys of this.registry.with('update')) sys.update(t.dt, this.ctx);
     for (const sys of this.registry.with('lateUpdate')) sys.lateUpdate(t.dt, this.ctx);

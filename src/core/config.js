@@ -112,7 +112,10 @@ export const DEFAULTS = {
 };
 
 export function createConfig(overrides = {}) {
-  const cfg = { ...DEFAULTS, ...overrides };
+  // Strip undefined so physicsHz: undefined does not wipe DEFAULTS.
+  const clean = { ...overrides };
+  for (const k of Object.keys(clean)) if (clean[k] === undefined) delete clean[k];
+  const cfg = { ...DEFAULTS, ...clean };
   cfg.q = { ...QUALITY_PRESETS[cfg.quality] };
   cfg.setQuality = (name) => {
     if (!QUALITY_PRESETS[name]) throw new Error(`unknown quality preset "${name}"`);
