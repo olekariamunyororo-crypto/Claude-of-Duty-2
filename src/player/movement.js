@@ -604,7 +604,7 @@ export class Movement {
 
   _doJump() {
     const v = this.velocity;
-    v.y = JUMP_SPEED;
+    v.y = JUMP_SPEED * (this.ctx?.config?.mobile ? 1.4 : 1);
     this._jumpBuffer = 0;
     this._jumpCooldown = MOVE.jumpCooldown;
     this._coyote = 0;
