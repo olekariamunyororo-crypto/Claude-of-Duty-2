@@ -44,12 +44,15 @@ window.__MOBILE__ = isMobile;
 if (isMobile) {
   config.sensitivity = Math.min(config.sensitivity, 0.0016);
   config.exposure = 0.75;
+  config.moveSpeedScale = 1.45;
+  config.timeScale = 1.3;
 }
 console.info('[boot] quality=%s mobile=%s sens=%s', config.quality, isMobile, config.sensitivity);
 
 const canvas = document.getElementById('game');
 
 const engine = new Engine({ canvas, config });
+if (config.timeScale && config.timeScale !== 1) engine.time.scale = config.timeScale;
 
 // Registration order is irrelevant — Registry topo-sorts on static deps.
 engine

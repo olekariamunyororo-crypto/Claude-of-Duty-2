@@ -402,8 +402,12 @@ export class Movement {
 
   _updateSprint(cmd, rawInput, forwardIntent) {
     const c = this.character;
+    const mobileAuto =
+      !!this.ctx?.config?.mobile &&
+      rawInput > 0.55 &&
+      forwardIntent > 0.5;
     const wantSprint =
-      cmd.sprintHeld &&
+      (cmd.sprintHeld || mobileAuto) &&
       rawInput > 0.45 &&
       forwardIntent > MOVE.sprintForwardDot &&
       this.stance === 'stand' &&
@@ -623,6 +627,8 @@ export class Movement {
       base *= lerp(1, MOVE.adsScale, clamp01(this.adsAmount));
     }
     base *= lerp(1, 0.6, clamp01(Math.abs(this.leanAmount)));
+    const scale = this.ctx?.config?.moveSpeedScale;
+    if (scale && scale !== 1) base *= scale;
     return base;
   }
 
