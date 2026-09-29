@@ -135,16 +135,19 @@ export class Engine {
 
     this._accum += t.dt;
     let steps = 0;
-    const fixedDt = this._fixedDt;
+    let fixedDt = this._fixedDt;
     const maxSub = this._maxSubsteps;
+    if (this._accum > fixedDt * maxSub) {
+      fixedDt = this._accum / maxSub;
+    }
     const fixedSystems = this.registry.with('fixedUpdate');
     while (this._accum >= fixedDt && steps < maxSub) {
       for (const sys of fixedSystems) sys.fixedUpdate(fixedDt, this.ctx);
       this._accum -= fixedDt;
       steps++;
     }
-    if (steps === maxSub) this._accum = Math.min(this._accum, fixedDt);
-    t.alpha = this._accum / fixedDt;
+    if (steps === maxSub) this._accum = 0;
+    t.alpha = fixedDt > 0 ? this._accum / fixedDt : 0;
 
     for (const sys of this.registry.with('update')) sys.update(t.dt, this.ctx);
     for (const sys of this.registry.with('lateUpdate')) sys.lateUpdate(t.dt, this.ctx);

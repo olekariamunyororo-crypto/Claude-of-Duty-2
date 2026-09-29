@@ -37,8 +37,8 @@ const config = createConfig({
   quality: params.get('q') ?? defaultQuality,
   deterministic: capture,
   mobile: isMobile,
-  physicsHz: isMobile ? 60 : undefined,
-  maxSubsteps: isMobile ? 12 : undefined,
+  physicsHz: isMobile ? 30 : undefined,
+  maxSubsteps: isMobile ? 24 : undefined,
 });
 window.__MOBILE__ = isMobile;
 if (isMobile) config.sensitivity = Math.min(config.sensitivity, 0.0016);

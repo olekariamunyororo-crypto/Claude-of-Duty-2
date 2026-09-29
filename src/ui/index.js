@@ -409,10 +409,12 @@ export class UiSystem {
     if (ctx.input.enabled && !ctx.input.frozen) {
       if (ctx.input.actionPressed('pause')) this.menu.toggle();
       // Losing pointer lock mid-match is the same intent as pressing Escape.
-      if (ctx.input.pointerLocked) this._hadPointerLock = true;
-      else if (this._hadPointerLock && !this.menu.open) {
-        this._hadPointerLock = false;
-        this.menu.show();
+      if (!ctx.config?.mobile) {
+        if (ctx.input.pointerLocked) this._hadPointerLock = true;
+        else if (this._hadPointerLock && !this.menu.open) {
+          this._hadPointerLock = false;
+          this.menu.show();
+        }
       }
     }
     this.menu.update(rawDt);

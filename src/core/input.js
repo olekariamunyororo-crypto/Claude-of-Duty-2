@@ -146,6 +146,7 @@ export class Input {
   }
 
   _onLockChange() {
+    if (this.mobile) { this.pointerLocked = true; return; }
     this.pointerLocked = document.pointerLockElement === this.canvas;
     if (!this.pointerLocked) this._onBlur();
   }
