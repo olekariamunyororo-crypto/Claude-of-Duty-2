@@ -48,6 +48,12 @@ export class Input {
     /** Set true by capture mode so scripted shots aren't fought by real input. */
     this.frozen = false;
 
+    this.mobile = !!(config && config.mobile);
+    this._touchLookId = null;
+    this._touchStickId = null;
+    this._stickOrigin = { x: 0, y: 0 };
+    // MOBILE_TOUCH_PATCH
+
     this.gamepadIndex = null;
     this.stick = { moveX: 0, moveY: 0, lookX: 0, lookY: 0 };
 
@@ -74,6 +80,7 @@ export class Input {
     addEventListener('blur', this._bound.blur);
     document.addEventListener('pointerlockchange', this._bound.lockchange);
     this.canvas.addEventListener('contextmenu', this._bound.contextmenu);
+    if (this.mobile) this._setupTouch();
   }
 
   detach() {
@@ -126,7 +133,8 @@ export class Input {
   }
 
   _onMouseMove(e) {
-    if (!this.enabled || !this.pointerLocked || this.frozen) return;
+    if (!this.enabled || this.frozen) return;
+    if (!this.pointerLocked && !this.mobile) return;
     // movementX/Y is already relative and unaffected by cursor clamping.
     this._rawLook.x += e.movementX ?? 0;
     this._rawLook.y += e.movementY ?? 0;
@@ -250,4 +258,84 @@ export class Input {
     out.y = y;
     return out;
   }
+  // ---- mobile touch (MOBILE_TOUCH_PATCH) ---------------------------------
+  _setupTouch() {
+    const ui = document.getElementById('touch-ui');
+    if (ui) ui.classList.add('on');
+    this._stickBase = document.getElementById('stick-base');
+    this._stickKnob = document.getElementById('stick-knob');
+    this._lookZone = document.getElementById('look-zone');
+    this._btnFire = document.getElementById('btn-fire');
+    this._btnJump = document.getElementById('btn-jump');
+    this._btnReload = document.getElementById('btn-reload');
+    const on = (el, type, fn, opts) => el && el.addEventListener(type, fn, opts || { passive: false });
+    on(this._stickBase, 'touchstart', (e) => {
+      e.preventDefault();
+      const t = e.changedTouches[0];
+      this._touchStickId = t.identifier;
+      const r = this._stickBase.getBoundingClientRect();
+      this._stickOrigin.x = r.left + r.width / 2;
+      this._stickOrigin.y = r.top + r.height / 2;
+      this._updateStick(t.clientX, t.clientY);
+    });
+    on(window, 'touchmove', (e) => {
+      for (const t of e.changedTouches) {
+        if (t.identifier === this._touchStickId) { e.preventDefault(); this._updateStick(t.clientX, t.clientY); }
+      }
+    }, { passive: false });
+    on(window, 'touchend', (e) => this._touchEnd(e));
+    on(window, 'touchcancel', (e) => this._touchEnd(e));
+    let lastLook = null;
+    on(this._lookZone, 'touchstart', (e) => {
+      e.preventDefault();
+      const t = e.changedTouches[0];
+      this._touchLookId = t.identifier;
+      lastLook = { x: t.clientX, y: t.clientY };
+    });
+    on(this._lookZone, 'touchmove', (e) => {
+      for (const t of e.changedTouches) {
+        if (t.identifier !== this._touchLookId) continue;
+        e.preventDefault();
+        if (lastLook) {
+          this._rawLook.x += (t.clientX - lastLook.x) * 1.6;
+          this._rawLook.y += (t.clientY - lastLook.y) * 1.6;
+        }
+        lastLook = { x: t.clientX, y: t.clientY };
+      }
+    }, { passive: false });
+    on(this._lookZone, 'touchend', () => { this._touchLookId = null; lastLook = null; });
+    on(this._lookZone, 'touchcancel', () => { this._touchLookId = null; lastLook = null; });
+    const hold = (el, code) => {
+      if (!el) return;
+      const down = (e) => { e.preventDefault(); this._pendingDown.add(code); };
+      const up = (e) => { e.preventDefault(); this._pendingUp.add(code); };
+      on(el, 'touchstart', down); on(el, 'touchend', up); on(el, 'touchcancel', up);
+    };
+    hold(this._btnFire, 'Mouse0');
+    hold(this._btnJump, 'Space');
+    hold(this._btnReload, 'KeyR');
+    this.pointerLocked = true;
+  }
+  _updateStick(clientX, clientY) {
+    const maxR = 48;
+    let dx = clientX - this._stickOrigin.x;
+    let dy = clientY - this._stickOrigin.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const scale = Math.min(1, maxR / len);
+    dx *= scale; dy *= scale;
+    this.stick.moveX = dx / maxR;
+    this.stick.moveY = dy / maxR;
+    if (this._stickKnob) this._stickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+  }
+  _touchEnd(e) {
+    for (const t of e.changedTouches) {
+      if (t.identifier === this._touchStickId) {
+        this._touchStickId = null;
+        this.stick.moveX = 0; this.stick.moveY = 0;
+        if (this._stickKnob) this._stickKnob.style.transform = 'translate(0,0)';
+      }
+      if (t.identifier === this._touchLookId) this._touchLookId = null;
+    }
+  }
+
 }

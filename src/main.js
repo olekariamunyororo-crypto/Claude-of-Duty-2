@@ -24,10 +24,22 @@ const capture = params.get('capture') === '1';
 // free-run. See the long comment in src/dev/shots.js.
 const lockstep = capture && params.get('lockstep') === '1';
 
+const isMobile =
+  params.get('mobile') === '1' ||
+  params.get('mobile') === 'true' ||
+  (params.get('mobile') !== '0' &&
+    (navigator.maxTouchPoints > 0 ||
+      matchMedia('(pointer: coarse)').matches ||
+      /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)));
+
+const defaultQuality = isMobile ? 'low' : 'medium';
 const config = createConfig({
-  quality: params.get('q') ?? 'ultra',
+  quality: params.get('q') ?? defaultQuality,
   deterministic: capture,
+  mobile: isMobile,
 });
+window.__MOBILE__ = isMobile;
+console.info('[boot] quality=%s mobile=%s', config.quality, isMobile);
 
 const canvas = document.getElementById('game');
 
@@ -81,6 +93,22 @@ console.info('[boot] prewarm', warmup);
 window.__PREWARM__ = warmup;
 
 engine.start();
+
+{
+  const boot = document.getElementById('boot');
+  const hide = () => {
+    if (!boot || boot.classList.contains('hidden')) return;
+    boot.classList.add('hidden');
+    setTimeout(() => boot.remove(), 500);
+  };
+  if (lockstep) hide();
+  else {
+    let n = 0;
+    const tick = () => { if (++n >= 2) hide(); else requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  }
+}
+
 
 // Capture harness handshake: only flag ready once a frame has actually landed.
 //

@@ -159,6 +159,9 @@ export class RenderSystem {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.shadowMap.autoUpdate = true;
     renderer.setClearColor(0x000000, 1);
+    // MOBILE_PIXEL_RATIO
+    const dprCap = (ctx.config && ctx.config.mobile) ? 1.5 : 2;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, dprCap));
     this.renderer = renderer;
 
     // ---- make every pre-compile see the FINAL program -----------------------

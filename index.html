@@ -2,19 +2,78 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>OVERWATCH — Tactical Shooter</title>
     <style>
       :root { color-scheme: dark; }
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+      html, body { width: 100%; height: 100%; overflow: hidden; background: #000; touch-action: none; -webkit-user-select: none; user-select: none; }
       body { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
       #game { display: block; width: 100vw; height: 100vh; touch-action: none; cursor: none; }
+      #boot {
+        position: fixed; inset: 0; z-index: 9998;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: #050505; color: #c8c8c8;
+        font: 14px/1.5 system-ui, -apple-system, sans-serif;
+        transition: opacity 0.4s ease;
+      }
+      #boot.hidden { opacity: 0; pointer-events: none; }
+      #boot .title { font-size: 22px; letter-spacing: 0.18em; color: #eee; margin-bottom: 12px; font-weight: 600; }
+      #boot .sub { opacity: 0.7; font-size: 13px; max-width: 280px; text-align: center; }
+      #boot .bar { width: min(220px, 60vw); height: 3px; margin-top: 22px; background: #222; border-radius: 2px; overflow: hidden; }
+      #boot .bar > i { display: block; height: 100%; width: 30%; background: linear-gradient(90deg, #3a7, #6cf); animation: bootslide 1.2s ease-in-out infinite; }
+      @keyframes bootslide { 0% { transform: translateX(-100%); } 50% { transform: translateX(230%); } 100% { transform: translateX(-100%); } }
+      #touch-ui { position: fixed; inset: 0; z-index: 20; pointer-events: none; display: none; }
+      #touch-ui.on { display: block; }
+      #stick-base, #look-zone, #btn-fire, #btn-jump, #btn-reload { pointer-events: auto; position: absolute; }
+      #stick-base {
+        left: max(16px, env(safe-area-inset-left)); bottom: max(24px, env(safe-area-inset-bottom));
+        width: 120px; height: 120px; border-radius: 50%;
+        background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18);
+      }
+      #stick-knob {
+        position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px;
+        border-radius: 50%; background: rgba(255,255,255,0.28); border: 1px solid rgba(255,255,255,0.35); will-change: transform;
+      }
+      #look-zone { right: 0; top: 0; bottom: 0; width: 55%; }
+      #btn-fire {
+        right: max(18px, env(safe-area-inset-right)); bottom: max(36px, env(safe-area-inset-bottom));
+        width: 72px; height: 72px; border-radius: 50%; background: rgba(220,60,60,0.35); border: 2px solid rgba(255,120,120,0.55);
+      }
+      #btn-jump {
+        right: max(100px, calc(env(safe-area-inset-right) + 90px)); bottom: max(48px, env(safe-area-inset-bottom));
+        width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.3);
+      }
+      #btn-reload {
+        right: max(24px, env(safe-area-inset-right)); bottom: max(120px, calc(env(safe-area-inset-bottom) + 100px));
+        width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.3);
+      }
+      #btn-fire::after, #btn-jump::after, #btn-reload::after {
+        position: absolute; inset: 0; display: grid; place-items: center; font: 11px/1 system-ui; color: rgba(255,255,255,0.85); letter-spacing: 0.06em;
+      }
+      #btn-fire::after { content: "FIRE"; }
+      #btn-jump::after { content: "JUMP"; }
+      #btn-reload::after { content: "R"; }
     </style>
   </head>
   <body>
     <canvas id="game"></canvas>
     <div id="ui"></div>
+    <div id="boot">
+      <div class="title">OVERWATCH</div>
+      <div class="sub" id="boot-msg">Building world… first load can take 15–40s on mobile</div>
+      <div class="bar"><i></i></div>
+    </div>
+    <div id="touch-ui">
+      <div id="stick-base"><div id="stick-knob"></div></div>
+      <div id="look-zone"></div>
+      <div id="btn-fire"></div>
+      <div id="btn-jump"></div>
+      <div id="btn-reload"></div>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
