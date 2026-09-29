@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Registry, EventBus } from './registry.js';
-import { FIXED_DT, MAX_SUBSTEPS } from './config.js';
+import { FIXED_DT, MAX_SUBSTEPS, PHYSICS_HZ } from './config.js';
 import { Input } from './input.js';
 import { Rng } from './rng.js';
 
@@ -34,11 +34,16 @@ export class Engine {
     this.viewScene = new THREE.Scene();
     this.viewCamera = new THREE.PerspectiveCamera(60, 1, 0.005, 12);
 
+    const physHz = config.physicsHz || PHYSICS_HZ;
+    const fixedDt = 1 / physHz;
+    this._fixedDt = fixedDt;
+    this._maxSubsteps = config.maxSubsteps || MAX_SUBSTEPS;
+
     this.time = {
       /** Seconds since start, scaled. */ elapsed: 0,
       /** Unscaled wall-clock seconds since start. */ raw: 0,
       /** Last frame delta, scaled and clamped. */ dt: 0,
-      /** Fixed step. */ fixed: FIXED_DT,
+      /** Fixed step. */ fixed: fixedDt,
       /** Interpolation alpha between the last two physics steps, 0..1. */ alpha: 0,
       scale: 1,
       frame: 0,
@@ -130,14 +135,16 @@ export class Engine {
 
     this._accum += t.dt;
     let steps = 0;
+    const fixedDt = this._fixedDt;
+    const maxSub = this._maxSubsteps;
     const fixedSystems = this.registry.with('fixedUpdate');
-    while (this._accum >= FIXED_DT && steps < MAX_SUBSTEPS) {
-      for (const sys of fixedSystems) sys.fixedUpdate(FIXED_DT, this.ctx);
-      this._accum -= FIXED_DT;
+    while (this._accum >= fixedDt && steps < maxSub) {
+      for (const sys of fixedSystems) sys.fixedUpdate(fixedDt, this.ctx);
+      this._accum -= fixedDt;
       steps++;
     }
-    if (steps === MAX_SUBSTEPS) this._accum = 0; // shed backlog rather than spiral
-    t.alpha = this._accum / FIXED_DT;
+    if (steps === maxSub) this._accum = Math.min(this._accum, fixedDt);
+    t.alpha = this._accum / fixedDt;
 
     for (const sys of this.registry.with('update')) sys.update(t.dt, this.ctx);
     for (const sys of this.registry.with('lateUpdate')) sys.lateUpdate(t.dt, this.ctx);

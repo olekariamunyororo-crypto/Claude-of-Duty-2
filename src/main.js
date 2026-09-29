@@ -32,11 +32,13 @@ const isMobile =
       matchMedia('(pointer: coarse)').matches ||
       /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)));
 
-const defaultQuality = isMobile ? 'low' : 'medium';
+const defaultQuality = isMobile ? 'mobile' : 'medium';
 const config = createConfig({
   quality: params.get('q') ?? defaultQuality,
   deterministic: capture,
   mobile: isMobile,
+  physicsHz: isMobile ? 60 : undefined,
+  maxSubsteps: isMobile ? 12 : undefined,
 });
 window.__MOBILE__ = isMobile;
 if (isMobile) config.sensitivity = Math.max(config.sensitivity, 0.0025);

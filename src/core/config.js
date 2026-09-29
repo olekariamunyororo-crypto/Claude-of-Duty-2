@@ -34,6 +34,21 @@ export const QUALITY_PRESETS = {
     particleBudget: 2000,
     decalBudget: 64,
   },
+  mobile: {
+    renderScale: 0.5,
+    shadowMapSize: 512,
+    cascades: 2,
+    shadowDistance: 40,
+    taa: false,
+    gtao: false,
+    ssr: false,
+    volumetrics: false,
+    motionBlur: false,
+    bloom: false,
+    anisotropy: 2,
+    particleBudget: 800,
+    decalBudget: 32,
+  },
   medium: {
     renderScale: 0.85,
     shadowMapSize: 2048,
@@ -84,6 +99,8 @@ export const QUALITY_PRESETS = {
 export const DEFAULTS = {
   quality: 'medium',
   mobile: false,
+  physicsHz: PHYSICS_HZ,
+  maxSubsteps: MAX_SUBSTEPS,
   fov: 80, // horizontal-ish vertical FOV, CoD default feel
   adsFovScale: 0.72,
   sensitivity: 0.0022,
