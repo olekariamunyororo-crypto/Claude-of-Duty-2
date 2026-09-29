@@ -276,8 +276,8 @@ export class Input {
     this._btnJump = document.getElementById('btn-jump');
     this._btnReload = document.getElementById('btn-reload');
     this._btnAds = document.getElementById('btn-ads');
-    this._touchLookScale = 1.8;
-    this._stickRadius = 55;
+    this._touchLookScale = 2.4;
+    this._stickRadius = 40;
     this._touchStickId = null;
     this._touchLookId = null;
     this._lookLast = null;
@@ -335,7 +335,7 @@ export class Input {
     console.info('[input] mobile touch controls active');
   }
   _updateStick(clientX, clientY) {
-    const maxR = this._stickRadius || 55;
+    const maxR = this._stickRadius || 40;
     let dx = clientX - this._stickOrigin.x;
     let dy = clientY - this._stickOrigin.y;
     const len = Math.hypot(dx, dy) || 1;
