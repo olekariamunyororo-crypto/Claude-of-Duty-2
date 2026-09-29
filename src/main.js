@@ -42,10 +42,10 @@ const config = createConfig({
 });
 window.__MOBILE__ = isMobile;
 if (isMobile) {
-  config.sensitivity = Math.min(config.sensitivity, 0.0016);
+  config.sensitivity = Math.min(config.sensitivity, 0.0020);
   config.exposure = 0.75;
-  config.moveSpeedScale = 1.45;
-  config.timeScale = 1.3;
+  config.moveSpeedScale = 1.9;
+  config.timeScale = 1.65;
 }
 console.info('[boot] quality=%s mobile=%s sens=%s', config.quality, isMobile, config.sensitivity);
 

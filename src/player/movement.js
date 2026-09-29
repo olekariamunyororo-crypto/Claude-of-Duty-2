@@ -404,8 +404,8 @@ export class Movement {
     const c = this.character;
     const mobileAuto =
       !!this.ctx?.config?.mobile &&
-      rawInput > 0.55 &&
-      forwardIntent > 0.5;
+      rawInput > 0.35 &&
+      forwardIntent > 0.35;
     const wantSprint =
       (cmd.sprintHeld || mobileAuto) &&
       rawInput > 0.45 &&
