@@ -75,6 +75,8 @@ export class AiSystem {
     this.debugLog = false;
     /** dev: force the garrison to spawn even in deterministic capture runs */
     this.forcePopulate = false;
+    this._populated = false;
+    this._populateTries = 0;
     this._navPending = true;
     this.stats = { agents: 0, alive: 0, navMs: 0, coverPts: 0, walkable: 0 };
 
@@ -161,7 +163,7 @@ export class AiSystem {
   _bootNav(ctx) {
     try {
       this._buildNav();
-      if (!this._navPending && (!ctx.config.deterministic || this.forcePopulate)) this.populate();
+      this._tryPopulate(ctx);
     } catch (err) {
       this._navPending = true;
       console.warn('[ai] boot nav deferred to the first frame:', err?.message ?? err);
@@ -474,21 +476,40 @@ export class AiSystem {
     return a;
   }
 
+  /** Populate once and never throw: retry a few frames, then give up. */
+  _tryPopulate(ctx) {
+    if (this._populated || this._navPending) return;
+    if (ctx.config.deterministic && !this.forcePopulate) return;
+    if ((this._populateTries | 0) >= 5) return;
+    this._populateTries = (this._populateTries | 0) + 1;
+    try {
+      this.populate();
+    } catch (err) {
+      if (this.agents.length > 0) this._populated = true; // avoid duplicates on retry
+      console.error(`[ai] populate failed (try ${this._populateTries}):`, err);
+    }
+  }
+
   /**
-   * Garrison the level: two squads on patrol routes drawn from the world's own
-   * spawn points, far enough from the player to be found rather than spawned on
-   * top of. This is what the behaviour tree, navigation and perception actually
-   * run against in play.
-   */
-  /**
-   * Garrison: spawn enemies in front of the player camera so they are visible on load.
+   * Garrison the level. Slots in front of the camera come first so enemies are
+   * visible on load; world spawn points are the fallback.
    */
   populate(opts = {}) {
     if (!this.grid) return 0;
+    if (this._populated && !opts.force) return this.agents.length;
+
+    const cfg = this.ctx?.config;
+    const squads = Math.max(1, opts.squads ?? cfg?.aiSquads ?? 2);
+    const per = Math.max(1, opts.perSquad ?? cfg?.aiPerSquad ?? 3);
+    const total = squads * per;
+    const variants = ['vanguard', 'irregular', 'breacher'];
+    const minDist = opts.minDist ?? 10;
+    const frontDist = opts.frontDist ?? 12;
 
     const cam = this.ctx.camera;
     if (cam?.updateMatrixWorld) cam.updateMatrixWorld(true);
     const player = this.playerPosition(this._v3).clone();
+    const playerFeetY = player.y - 1.35;
 
     const fwd = new THREE.Vector3();
     if (cam?.getWorldDirection) cam.getWorldDirection(fwd);
@@ -500,53 +521,80 @@ export class AiSystem {
     if (right.lengthSq() < 1e-8) right.set(1, 0, 0);
     else right.normalize();
 
-    const variants = ['vanguard', 'irregular', 'breacher'];
-    const cfg = this.ctx?.config;
-    const squads = opts.squads ?? cfg?.aiSquads ?? 2;
-    const per = opts.perSquad ?? cfg?.aiPerSquad ?? 3;
-    const total = Math.max(1, squads * per);
-    const frontDist = opts.frontDist ?? 10;
-
-    let made = 0;
-    let squad = this.createSquad();
-
+    const anchors = [];
     for (let i = 0; i < total; i++) {
-      if (i > 0 && per > 0 && i % per === 0) squad = this.createSquad();
-
       const col = (i % 3) - 1;
       const row = (i / 3) | 0;
-      const dist = frontDist + row * 2.5 + this.rng.range(-0.4, 0.4);
-      const lateral = col * 2.4 + this.rng.range(-0.35, 0.35);
+      const dist = frontDist + row * 3.0 + this.rng.range(-0.5, 0.5);
+      const lateral = col * 2.6 + this.rng.range(-0.4, 0.4);
+      const p = player.clone().addScaledVector(fwd, dist).addScaledVector(right, lateral);
+      p.y = playerFeetY;
+      anchors.push({ position: p, yaw: Math.atan2(player.x - p.x, player.z - p.z) });
+    }
+    const spawns = (this.ctx.peek('world')?.spawnPoints ?? [])
+      .filter((s) => {
+        const d = s.position.distanceTo(player);
+        return d >= minDist && d < 80;
+      })
+      .sort((a, b) => a.position.distanceTo(player) - b.position.distanceTo(player));
+    for (const s of spawns) anchors.push({ position: s.position.clone(), yaw: s.yaw ?? 0 });
 
-      const p = player.clone()
-        .addScaledVector(fwd, dist)
-        .addScaledVector(right, lateral);
-
-      const ci = this.grid.nearest(p.x, p.z, player.y, 10, 2.5);
+    const used = [];
+    const placeNear = (approx) => {
+      const p = approx.clone();
+      const ci = this.grid.nearest(p.x, p.z, playerFeetY, 14, 3.0);
       if (ci >= 0) {
         p.set(
           this.grid.worldX(ci % this.grid.nx),
           this.grid.floor[ci],
-          this.grid.worldZ((ci / this.grid.nx) | 0)
+          this.grid.worldZ((ci / this.grid.nx) | 0),
         );
       } else {
-        p.y = this.groundAt(p.x, p.z, player.y + 4);
+        p.y = this.groundAt(p.x, p.z, player.y + 6);
       }
+      for (const u of used) if (u.distanceToSquared(p) < 1.44) return null;
+      if (p.distanceToSquared(player) < 25) return null;
+      used.push(p.clone());
+      return p;
+    };
 
-      const yaw = Math.atan2(player.x - p.x, player.z - p.z);
+    let made = 0;
+    let squad = null;
+    for (let k = 0; k < anchors.length * 2 && made < total; k++) {
+      const anchor = anchors[k % anchors.length];
+      const ja = this.rng.range(0, Math.PI * 2);
+      const jr = this.rng.range(0.4, 2.4);
+      const approx = anchor.position.clone().add(
+        new THREE.Vector3(Math.cos(ja) * jr, 0, Math.sin(ja) * jr),
+      );
+      const p = placeNear(approx);
+      if (!p) continue;
+      if (!squad || squad.members.length >= per) squad = this.createSquad();
       const patrol = [
         p.clone(),
         p.clone().addScaledVector(right, 2.5),
         p.clone().addScaledVector(fwd, 2.0),
       ];
-      const a = this.spawn(variants[i % variants.length], p, yaw, { patrol });
+      const a = this.spawn(variants[made % variants.length], p, anchor.yaw + this.rng.signed() * 0.4, { patrol });
       squad.add(a);
       made++;
     }
 
-    console.info(
-      `[ai] garrison: \( {made} enemies in front of camera (\~ \){frontDist}m, \( {squads}x \){per})`
-    );
+    if (made === 0) {
+      squad = this.createSquad();
+      for (let i = 0; i < per; i++) {
+        const p = player.clone().addScaledVector(fwd, 8 + i * 2).addScaledVector(right, (i - 1) * 2);
+        p.y = this.groundAt(p.x, p.z, player.y + 6);
+        const yaw = Math.atan2(player.x - p.x, player.z - p.z);
+        squad.add(this.spawn(variants[i % variants.length], p, yaw, { patrol: [p.clone()] }));
+        made++;
+      }
+    }
+
+    this._populated = made > 0;
+    const f = (v) => v.toArray().map((n) => +n.toFixed(1));
+    console.info(`[ai] garrison: ${made}/${total} enemies (${squads}x${per}) walkable=${this.grid.walkableCount} anchors=${anchors.length}`);
+    console.info('[ai] player', f(player), 'enemies', this.agents.map((a) => f(a.position)));
     return made;
   }
 
@@ -739,8 +787,10 @@ export class AiSystem {
       // Populate the level for normal play. Capture runs stay empty unless a
       // shot asks for a tableau, so nobody's screenshot gets a stray patrol
       // wandering through it.
-      if (!this._navPending && (!ctx.config.deterministic || this.forcePopulate)) this.populate();
+      this._tryPopulate(ctx);
     }
+
+    this._tryPopulate(ctx);
 
     // Per-frame A* budget: see requestPath().
     this._pathBudget = this.pathsPerFrame;
@@ -991,6 +1041,15 @@ export class AiSystem {
    * moving between positions, one reloading further back.
    */
   debugStage(name) {
+    if (name === 'none') {
+      for (const a of this._stagedAgents ?? []) {
+        try { a.dispose?.(); } catch (e) { /* already gone */ }
+        const i = this.agents.indexOf(a);
+        if (i >= 0) this.agents.splice(i, 1);
+      }
+      this._stagedAgents = [];
+      return this.stats;
+    }
     if (name !== 'firefight') return this.stats;
     if (this.inspect) return this._stageInspect();
     if (this._navPending) this._buildNav();
