@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import { hdrTarget, blit } from './pass.js';
+import { hdrTarget, blit , setHdrTargetType} from './pass.js';
 import { CascadedShadowMaps } from './csm.js';
 import { MaterialPatcher } from './materialpatch.js';
 import { GBuffer } from './prepass.js';
@@ -131,6 +131,13 @@ export class RenderSystem {
     const q = cfg.q;
     this.q = q;
     this.qLevel = QUALITY_LEVEL[cfg.quality] ?? 0;
+    if (cfg.ldrTargets || cfg.mobile) {
+      setHdrTargetType(THREE.UnsignedByteType);
+    }
+    this._dynScale = q.renderScale;
+    this._dynLast = performance.now();
+    this._dynSmooth = 16.7;
+
     this.rng = ctx.rng.fork();
     this.frame = 0;
 
@@ -880,15 +887,42 @@ this._applySettings();
   //  sizing
   // ==========================================================================
 
+
+  _updateDynamicResolution(cfg) {
+    if (!cfg?.mobile && cfg?.dynResSlowMs == null) return;
+    const now = performance.now();
+    const dt = now - (this._dynLast || now);
+    this._dynLast = now;
+    this._dynSmooth = (this._dynSmooth ?? 16.7) * 0.85 + dt * 0.15;
+    const slow = cfg.dynResSlowMs ?? 33;
+    const fast = cfg.dynResFastMs ?? 18;
+    const minS = cfg.dynResMin ?? 0.28;
+    const maxS = cfg.dynResMax ?? (this.q.renderScale || 0.5);
+    let next = this._dynScale ?? this.q.renderScale;
+    if (this._dynSmooth > slow) next = Math.max(minS, next * 0.9);
+    else if (this._dynSmooth < fast) next = Math.min(maxS, next * 1.03);
+    if (Math.abs(next - (this._dynScale ?? 0)) > 0.02) {
+      this._dynScale = next;
+      const w = this.canvas?.clientWidth || globalThis.innerWidth;
+      const h = this.canvas?.clientHeight || globalThis.innerHeight;
+      this.resize(w, h, this.ctx);
+    } else {
+      this._dynScale = next;
+    }
+  }
+
   resize(w, h, ctx) {
-    const pr = Math.min(globalThis.devicePixelRatio || 1, 1.5);
+    const cfg = ctx?.config ?? this.ctx?.config ?? {};
+    const dprCap = cfg.dprCap ?? (cfg.mobile ? 1 : 1.5);
+    const pr = Math.min(globalThis.devicePixelRatio || 1, dprCap);
     this.renderer.setPixelRatio(pr);
     this.renderer.setSize(w, h, false);
 
     const dw = Math.max(1, Math.floor(w * pr));
     const dh = Math.max(1, Math.floor(h * pr));
-    const rw = Math.max(1, Math.floor(dw * this.q.renderScale));
-    const rh = Math.max(1, Math.floor(dh * this.q.renderScale));
+    const scale = this._dynScale ?? this.q.renderScale;
+    const rw = Math.max(1, Math.floor(dw * scale));
+    const rh = Math.max(1, Math.floor(dh * scale));
 
     this.displaySize.width = dw;
     this.displaySize.height = dh;
@@ -1280,6 +1314,8 @@ this._applySettings();
   // ==========================================================================
 
   render(ctx) {
+    this._updateDynamicResolution(ctx.config);
+
     const renderer = this.renderer;
     const { scene, camera, viewScene, viewCamera } = ctx;
     const dt = Math.min(0.1, Math.max(1 / 480, ctx.time.dt || 1 / 60));
