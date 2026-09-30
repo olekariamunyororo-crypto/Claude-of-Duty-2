@@ -34,11 +34,19 @@ import {
  * `level` is a linear trim; the mix expects ~1.0 for a 5.56 rifle.
  */
 export const WEAPON_PROFILES = {
+  // M4 / 5.56 AR — profile from olekariamunyororo-crypto/client (Sfx.GUN.ar).
+  ar: {
+    level: 0.95, bodyF: 140, bodyF2: 54, bodyDecay: 0.085, subF: 60, subDecay: 0.12,
+    crackF: 2600, crackQ: 1.0, crackDecay: 0.05, drive: 6, asym: 0.32,
+    midF: 800, midDecay: 0.045, tailDecay: 0.24, tailF: 5400, tailEndF: 750,
+    mechDelay: 0.027, mechLevel: 0.45, mechPartials: [1950, 3400, 5600], send: 0.48,
+  },
+  // Primary weapon id is `rifle` — same M4/AR character.
   rifle: {
-    level: 1.0, bodyF: 148, bodyF2: 56, bodyDecay: 0.085, subF: 62, subDecay: 0.12,
-    crackF: 2450, crackQ: 0.95, crackDecay: 0.055, drive: 6, asym: 0.35,
-    midF: 780, midDecay: 0.05, tailDecay: 0.3, tailF: 5200, tailEndF: 700,
-    mechDelay: 0.028, mechLevel: 0.42, mechPartials: [1880, 3260, 5400], send: 0.5,
+    level: 0.95, bodyF: 140, bodyF2: 54, bodyDecay: 0.085, subF: 60, subDecay: 0.12,
+    crackF: 2600, crackQ: 1.0, crackDecay: 0.05, drive: 6, asym: 0.32,
+    midF: 800, midDecay: 0.045, tailDecay: 0.24, tailF: 5400, tailEndF: 750,
+    mechDelay: 0.027, mechLevel: 0.45, mechPartials: [1950, 3400, 5600], send: 0.48,
   },
   ak: {
     level: 1.1, bodyF: 124, bodyF2: 46, bodyDecay: 0.105, subF: 52, subDecay: 0.15,
@@ -92,11 +100,12 @@ export function resolveProfile(name) {
   const k = String(name).toLowerCase();
   if (WEAPON_PROFILES[k]) return WEAPON_PROFILES[k];
   if (/suppress|silenc/.test(k)) return WEAPON_PROFILES.suppressed;
-  if (/ak|7\.?62|akm|scar/.test(k)) return WEAPON_PROFILES.ak;
-  if (/mp5|mp7|smg|ump|vector|uzi/.test(k)) return WEAPON_PROFILES.smg;
-  if (/pistol|glock|m19|deagle|handgun|sidearm/.test(k)) return WEAPON_PROFILES.pistol;
+  if (/m4|m16|ar-?15|scar|famas|tavor|carbine|md97|5\.?56|556/.test(k)) return WEAPON_PROFILES.ar;
+  if (/ak|7\.?62|akm|g3(?!sg)/.test(k)) return WEAPON_PROFILES.ak;
+  if (/mp5|mp7|smg|ump|vector|uzi|p90/.test(k)) return WEAPON_PROFILES.smg;
+  if (/pistol|glock|m19|deagle|handgun|sidearm|m92|revolver/.test(k)) return WEAPON_PROFILES.pistol;
   if (/shot|pump|12g|benelli|spas/.test(k)) return WEAPON_PROFILES.shotgun;
-  if (/snip|dmr|awp|barrett|338|intervention|marksman/.test(k)) return WEAPON_PROFILES.sniper;
+  if (/snip|dmr|awp|barrett|338|intervention|marksman|m400|mosin|svd/.test(k)) return WEAPON_PROFILES.sniper;
   if (/lmg|mg4|m249|pkm|saw|minigun/.test(k)) return WEAPON_PROFILES.lmg;
   return WEAPON_PROFILES.rifle;
 }
