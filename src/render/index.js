@@ -464,11 +464,11 @@ export class RenderSystem {
       sunSoftness: 0.024,
     };
     
-    // MOBILE_SAFE_EXPOSURE (must run AFTER settings object exists)
-    if (cfg.mobile || cfg.quality === 'mobile' || cfg.quality === 'low') {
+    if (cfg.mobile || cfg.mobileExposure) {
+      const me = cfg.mobileExposure || {};
       this.settings.autoExposure = false;
-      this.settings.exposureBias = 1.35;
-      this.settings.exposureKey = 0.5;
+      this.settings.exposureBias = me.bias ?? 1.1;
+      this.settings.exposureKey = me.key ?? 0.55;
       this.settings.bloomStrength = Math.min(this.settings.bloomStrength || 0, 0.05);
     }
 this._applySettings();

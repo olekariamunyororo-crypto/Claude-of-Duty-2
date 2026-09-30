@@ -1,5 +1,6 @@
 import { Engine } from './core/engine.js';
 import { createConfig } from './core/config.js';
+import { detectMobile, applyMobileProfile } from './core/mobileProfile.js';
 
 import { RenderSystem } from './render/index.js';
 import { MaterialSystem } from './materials/index.js';
@@ -24,35 +25,25 @@ const capture = params.get('capture') === '1';
 // free-run. See the long comment in src/dev/shots.js.
 const lockstep = capture && params.get('lockstep') === '1';
 
-const isMobile =
-  params.get('mobile') === '1' ||
-  params.get('mobile') === 'true' ||
-  (params.get('mobile') !== '0' &&
-    (navigator.maxTouchPoints > 0 ||
-      matchMedia('(pointer: coarse)').matches ||
-      /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)));
+const isMobile = detectMobile(params);
 
 const defaultQuality = isMobile ? 'low' : 'medium';
 const config = createConfig({
   quality: params.get('q') ?? defaultQuality,
   deterministic: capture,
   mobile: isMobile,
-  physicsHz: isMobile ? 30 : undefined,
-  maxSubsteps: isMobile ? 24 : undefined,
 });
+if (isMobile) applyMobileProfile(config);
 window.__MOBILE__ = isMobile;
-if (isMobile) {
-  config.sensitivity = Math.min(config.sensitivity, 0.00175);
-  config.exposure = 0.75;
-  config.moveSpeedScale = 8;
-  config.timeScale = 5;
-}
-console.info('[boot] quality=%s mobile=%s sens=%s', config.quality, isMobile, config.sensitivity);
+console.info(
+  '[boot] quality=%s mobile=%s moveScale=%s timeScale=%s sens=%s',
+  config.quality, isMobile, config.moveSpeedScale ?? 1, config.timeScale ?? 1, config.sensitivity,
+);
 
 const canvas = document.getElementById('game');
 
 const engine = new Engine({ canvas, config });
-if (config.timeScale && config.timeScale !== 1) engine.time.scale = config.timeScale;
+if (config.timeScale != null) engine.time.scale = config.timeScale;
 
 // Registration order is irrelevant — Registry topo-sorts on static deps.
 engine

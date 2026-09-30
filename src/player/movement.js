@@ -402,10 +402,11 @@ export class Movement {
 
   _updateSprint(cmd, rawInput, forwardIntent) {
     const c = this.character;
+    const cfg = this.ctx?.config;
     const mobileAuto =
-      !!this.ctx?.config?.mobile &&
-      rawInput > 0.35 &&
-      forwardIntent > 0.35;
+      !!cfg?.mobile &&
+      rawInput > (cfg.autoSprintInput ?? 0.4) &&
+      forwardIntent > (cfg.autoSprintForward ?? 0.4);
     const wantSprint =
       (cmd.sprintHeld || mobileAuto) &&
       rawInput > 0.45 &&
@@ -604,7 +605,7 @@ export class Movement {
 
   _doJump() {
     const v = this.velocity;
-    v.y = JUMP_SPEED * (this.ctx?.config?.mobile ? 1.4 : 1);
+    v.y = JUMP_SPEED * (this.ctx?.config?.jumpScale ?? 1);
     this._jumpBuffer = 0;
     this._jumpCooldown = MOVE.jumpCooldown;
     this._coyote = 0;

@@ -136,8 +136,8 @@ export class Engine {
     const fixedSystems = this.registry.with('fixedUpdate');
     // Mobile: one variable physics step per frame → sim time == wall clock.
     if (this.config.mobile) {
-      // Soft cap only — high timeScale must advance physics fully.
-      const h = Math.min(Math.max(t.dt, 0), 0.25);
+      const cap = this.config.physicsDtCap ?? 0.05;
+      const h = Math.min(Math.max(t.dt, 0), cap);
       if (h > 1e-6 && t.scale > 0) {
         for (const sys of fixedSystems) sys.fixedUpdate(h, this.ctx);
       }

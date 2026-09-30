@@ -276,8 +276,8 @@ export class Input {
     this._btnJump = document.getElementById('btn-jump');
     this._btnReload = document.getElementById('btn-reload');
     this._btnAds = document.getElementById('btn-ads');
-    this._touchLookScale = 1.75;
-    this._stickRadius = 28;
+    this._touchLookScale = this.config.touchLookScale ?? 1.6;
+    this._stickRadius = this.config.stickRadius ?? 64;
     this._touchStickId = null;
     this._touchLookId = null;
     this._lookLast = null;
