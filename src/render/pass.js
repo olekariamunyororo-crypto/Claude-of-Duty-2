@@ -61,10 +61,19 @@ export class Pass {
   }
 }
 
-/** Half-float colour target with sane defaults for HDR post. */
+/** Default colour buffer type — HalfFloat on desktop, UnsignedByte on mobile LDR. */
+let _hdrType = THREE.HalfFloatType;
+export function setHdrTargetType(type) {
+  _hdrType = type;
+}
+export function getHdrTargetType() {
+  return _hdrType;
+}
+
+/** Colour target for the post stack. Type is global so mobile can force LDR. */
 export function hdrTarget(w, h, opts = {}) {
   const rt = new THREE.WebGLRenderTarget(Math.max(1, w), Math.max(1, h), {
-    type: THREE.HalfFloatType,
+    type: opts.type ?? _hdrType,
     format: THREE.RGBAFormat,
     minFilter: THREE.LinearFilter,
     magFilter: THREE.LinearFilter,
