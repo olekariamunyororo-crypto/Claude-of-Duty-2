@@ -480,61 +480,73 @@ export class AiSystem {
    * top of. This is what the behaviour tree, navigation and perception actually
    * run against in play.
    */
+  /**
+   * Garrison: spawn enemies in front of the player camera so they are visible on load.
+   */
   populate(opts = {}) {
-    const world = this.ctx.peek('world');
-    const spawns = world?.spawnPoints ?? [];
-    if (!spawns.length || !this.grid) return 0;
+    if (!this.grid) return 0;
+
+    const cam = this.ctx.camera;
+    if (cam?.updateMatrixWorld) cam.updateMatrixWorld(true);
     const player = this.playerPosition(this._v3).clone();
-    // rank the spawn points by distance from the player, take the far half
-    const ranked = spawns
-      .map((s, i) => ({ s, i, d: s.position.distanceTo(player) }))
-      .sort((a, b) => b.d - a.d)
-      .filter((e) => e.d > 18);
-    if (!ranked.length) return 0;
+
+    const fwd = new THREE.Vector3();
+    if (cam?.getWorldDirection) cam.getWorldDirection(fwd);
+    else fwd.set(0, 0, -1);
+    fwd.y = 0;
+    if (fwd.lengthSq() < 1e-8) fwd.set(0, 0, -1);
+    fwd.normalize();
+    const right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0));
+    if (right.lengthSq() < 1e-8) right.set(1, 0, 0);
+    else right.normalize();
 
     const variants = ['vanguard', 'irregular', 'breacher'];
     const cfg = this.ctx?.config;
     const squads = opts.squads ?? cfg?.aiSquads ?? 2;
     const per = opts.perSquad ?? cfg?.aiPerSquad ?? 3;
-    let made = 0;
-    for (let q = 0; q < squads && q < ranked.length; q++) {
-      const squad = this.createSquad();
-      const anchor = ranked[q % ranked.length].s;
-      // patrol route: this spawn point and the two next-nearest ones
-      const route = [anchor.position.clone()];
-      const others = ranked
-        .filter((e) => e.s !== anchor)
-        .sort(
-          (a, b) =>
-            a.s.position.distanceTo(anchor.position) - b.s.position.distanceTo(anchor.position)
-        )
-        .slice(0, 2);
-      for (const o of others) route.push(o.s.position.clone());
+    const total = Math.max(1, squads * per);
+    const frontDist = opts.frontDist ?? 10;
 
-      for (let m = 0; m < per; m++) {
-        const jitterA = this.rng.range(0, Math.PI * 2);
-        const jitterR = this.rng.range(0.8, 3.2);
-        const p = anchor.position
-          .clone()
-          .add(new THREE.Vector3(Math.cos(jitterA) * jitterR, 0, Math.sin(jitterA) * jitterR));
-        const ci = this.grid.nearest(p.x, p.z, anchor.position.y, 6, 1.4);
-        if (ci >= 0) {
-          p.set(
-            this.grid.worldX(ci % this.grid.nx),
-            this.grid.floor[ci],
-            this.grid.worldZ((ci / this.grid.nx) | 0)
-          );
-        } else {
-          p.y = this.groundAt(p.x, p.z, anchor.position.y + 4);
-        }
-        const a = this.spawn(variants[(q * per + m) % variants.length], p, anchor.yaw + this.rng.signed() * 0.7, {
-          patrol: route,
-        });
-        squad.add(a);
-        made++;
+    let made = 0;
+    let squad = this.createSquad();
+
+    for (let i = 0; i < total; i++) {
+      if (i > 0 && per > 0 && i % per === 0) squad = this.createSquad();
+
+      const col = (i % 3) - 1;
+      const row = (i / 3) | 0;
+      const dist = frontDist + row * 2.5 + this.rng.range(-0.4, 0.4);
+      const lateral = col * 2.4 + this.rng.range(-0.35, 0.35);
+
+      const p = player.clone()
+        .addScaledVector(fwd, dist)
+        .addScaledVector(right, lateral);
+
+      const ci = this.grid.nearest(p.x, p.z, player.y, 10, 2.5);
+      if (ci >= 0) {
+        p.set(
+          this.grid.worldX(ci % this.grid.nx),
+          this.grid.floor[ci],
+          this.grid.worldZ((ci / this.grid.nx) | 0)
+        );
+      } else {
+        p.y = this.groundAt(p.x, p.z, player.y + 4);
       }
+
+      const yaw = Math.atan2(player.x - p.x, player.z - p.z);
+      const patrol = [
+        p.clone(),
+        p.clone().addScaledVector(right, 2.5),
+        p.clone().addScaledVector(fwd, 2.0),
+      ];
+      const a = this.spawn(variants[i % variants.length], p, yaw, { patrol });
+      squad.add(a);
+      made++;
     }
-    console.info(`[ai] garrison: ${made} enemies in ${squads} squads`);
+
+    console.info(
+      `[ai] garrison: \( {made} enemies in front of camera (\~ \){frontDist}m, \( {squads}x \){per})`
+    );
     return made;
   }
 
