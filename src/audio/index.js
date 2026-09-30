@@ -118,6 +118,8 @@ export class AudioSystem {
 
     this._offs = [];
     this._gestureHandler = null;
+    this._m4Buffers = [];
+    this._m4Cursor = 0;
     this._ambienceApi = null;
   }
 
@@ -185,6 +187,7 @@ export class AudioSystem {
         src.connect(actx.destination);
         src.start(0);
       } catch { /* ignore */ }
+      this._loadM4Samples().catch((e) => console.warn('[audio] m4 samples', e?.message ?? e));
       this.running = true;
       this.stats.started = true;
       this.stats.contextState = actx.state;
@@ -549,6 +552,45 @@ export class AudioSystem {
     on('ai:bark', (p) => this.bark(p?.kind ?? 'spot', p?.position, { voice: p?.voice ?? 0 }));
   }
 
+
+  async _loadM4Samples() {
+    if (!this.actx) return;
+    const urls = ['/audio/weapons/m4_0.wav','/audio/weapons/m4_1.wav','/audio/weapons/m4_2.wav','/audio/weapons/m4_3.wav'];
+    const out = [];
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { cache: 'force-cache' });
+        if (!res.ok) continue;
+        const ab = await res.arrayBuffer();
+        out.push(await this.actx.decodeAudioData(ab.slice(0)));
+      } catch {}
+    }
+    this._m4Buffers = out;
+    if (out.length) console.info(`[audio] m4 samples loaded: ${out.length} (CC0 mnslugger20/259758)`);
+  }
+
+  _playM4Sample(level = 1) {
+    const bufs = this._m4Buffers;
+    if (!bufs?.length || !this.actx || !this.mixer) return false;
+    try {
+      const buf = bufs[this._m4Cursor++ % bufs.length];
+      const src = this.actx.createBufferSource();
+      src.buffer = buf;
+      src.playbackRate.value = 0.97 + Math.random() * 0.06;
+      const g = this.actx.createGain();
+      const t = this.actx.currentTime;
+      g.gain.setValueAtTime(0.85 * level, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + Math.min(0.2, buf.duration));
+      const busIn = typeof this.mixer.bus === 'function'
+        ? this.mixer.bus('weapons')
+        : (this.mixer.buses?.weapons?.input || this.actx.destination);
+      src.connect(g); g.connect(busIn);
+      this.mixer.duck?.(0.3, 0.12);
+      src.start(t); src.stop(t + buf.duration + 0.05);
+      return true;
+    } catch { return false; }
+  }
+
   _onFire(p) {
     if (!this.running || !p) return;
     const w = p.weapon;
@@ -566,6 +608,12 @@ export class AudioSystem {
     if (p.empty) {
       this._playDry('dryfire', {}, 'weapons', 0.15);
       return;
+    }
+
+    {
+      const k = String(name ?? 'rifle').toLowerCase();
+      const isOther = /suppress|silenc|ak|7\.?62|smg|mp5|pistol|glock|shot|pump|snip|awp|lmg|m249/.test(k);
+      if (!isOther && this._playM4Sample(1)) return;
     }
 
     const o = p.origin;
