@@ -554,6 +554,13 @@ export class AudioSystem {
     const w = p.weapon;
     const name = typeof w === 'string' ? w : (w?.audio ?? w?.id ?? w?.name ?? w?.kind);
     let profile = resolveProfile(name);
+    // FORCE client M4/AR character for the primary rifle family (id is often just `rifle`).
+    {
+      const k = String(name ?? 'rifle').toLowerCase();
+      const isOther =
+        /suppress|silenc|ak|7\.?62|smg|mp5|pistol|glock|shot|pump|snip|awp|lmg|m249/.test(k);
+      if (!isOther) profile = WEAPON_PROFILES.ar;
+    }
     if (w && typeof w === 'object' && w.suppressed) profile = WEAPON_PROFILES.suppressed;
 
     if (p.empty) {

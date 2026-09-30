@@ -35,18 +35,20 @@ import {
  */
 export const WEAPON_PROFILES = {
   // M4 / 5.56 AR — profile from olekariamunyororo-crypto/client (Sfx.GUN.ar).
+  // FORCED client M4 (Sfx.GUN.ar + CH [snap,punch,room]=[1.10,0.95,0.70])
   ar: {
     level: 0.95, bodyF: 140, bodyF2: 54, bodyDecay: 0.085, subF: 60, subDecay: 0.12,
     crackF: 2600, crackQ: 1.0, crackDecay: 0.05, drive: 6, asym: 0.32,
     midF: 800, midDecay: 0.045, tailDecay: 0.24, tailF: 5400, tailEndF: 750,
     mechDelay: 0.027, mechLevel: 0.45, mechPartials: [1950, 3400, 5600], send: 0.48,
+    snap: 1.10, punch: 0.95, room: 0.70,
   },
-  // Primary weapon id is `rifle` — same M4/AR character.
   rifle: {
     level: 0.95, bodyF: 140, bodyF2: 54, bodyDecay: 0.085, subF: 60, subDecay: 0.12,
     crackF: 2600, crackQ: 1.0, crackDecay: 0.05, drive: 6, asym: 0.32,
     midF: 800, midDecay: 0.045, tailDecay: 0.24, tailF: 5400, tailEndF: 750,
     mechDelay: 0.027, mechLevel: 0.45, mechPartials: [1950, 3400, 5600], send: 0.48,
+    snap: 1.10, punch: 0.95, room: 0.70,
   },
   ak: {
     level: 1.1, bodyF: 124, bodyF2: 46, bodyDecay: 0.105, subF: 52, subDecay: 0.15,
@@ -174,21 +176,28 @@ export function weaponShot(actx, bank, rng, profile, o = {}) {
   const out = gain(actx, 0.46);
   let end = t0 + 0.2;
 
-  /* ---- 1. transient --------------------------------------------- */
+  /* ---- 1. transient (client GUNFEEL snap) ------------------------ */
+  const snap = profile.snap ?? 1;
+  const punch = profile.punch ?? 1;
   if (nearP > 0.05) {
     const tg = gain(actx, 0);
     const src = bank.source('white', rng, rng.range(0.9, 1.3));
-    const hp = biquad(actx, 'highpass', 2600, 0.6);
-    const pk = biquad(actx, 'peaking', 6200 * jC, 1.1, 8 + v.tilt);
+    const hp = biquad(actx, 'highpass', 2400 * snap, 0.6);
+    const pk = biquad(actx, 'peaking', 7000 * jC, 1.1, 8 + v.tilt);
     series(src, hp, pk, tg).connect(out);
-    hit(tg.gain, t0, 0.9 * nearP * jL * (profile.suppressed ? 0.35 : 1), 0.0075);
+    hit(tg.gain, t0, 0.95 * snap * nearP * jL * (profile.suppressed ? 0.35 : 1), 0.007);
     src.start(t0, src._offset, 0.05);
-    // A single-cycle sine at the top of the click adds the "snap" that pure
-    // noise cannot produce.
+    // Client 7 kHz attack tick
+    const tg2 = gain(actx, 0);
+    const src2 = bank.source('white', rng, rng.range(1.0, 1.4));
+    const hp2 = biquad(actx, 'highpass', 7000, 0.7);
+    series(src2, hp2, tg2).connect(out);
+    hit(tg2.gain, t0, 0.55 * snap * nearP * jL, 0.0025);
+    src2.start(t0, src2._offset, 0.02);
     const clk = osc(actx, 'triangle', 1750 * jC);
     const cg = gain(actx, 0);
     clk.connect(cg); cg.connect(out);
-    hit(cg.gain, t0, 0.35 * nearP * jL, 0.004);
+    hit(cg.gain, t0, 0.34 * snap * nearP * jL, 0.004);
     clk.start(t0); clk.stop(t0 + 0.02);
   }
 
@@ -215,7 +224,7 @@ export function weaponShot(actx, bank, rng, profile, o = {}) {
     const sg = gain(actx, 0);
     s.connect(sg); sg.connect(out);
     sweep(s.frequency, t0, profile.subF * jB * 1.5, profile.subF * jB * 0.8, profile.subDecay);
-    ad(sg.gain, t0, (0.5 + far * 0.55) * profile.level, 0.004, profile.subDecay * 1.3);
+    ad(sg.gain, t0, (0.5 + far * 0.55) * punch * profile.level, 0.004, profile.subDecay * 1.3);
     s.start(t0); s.stop(t0 + profile.subDecay * 2 + 0.05);
     end = Math.max(end, t0 + profile.subDecay * 2 + 0.05);
   }
@@ -230,7 +239,7 @@ export function weaponShot(actx, bank, rng, profile, o = {}) {
     series(src, bp, res, drv, cg).connect(out);
     // The crack's own band sweeps down a little: the shock front decays.
     sweep(bp.frequency, t0, profile.crackF * jC * 1.35, profile.crackF * jC * 0.8, profile.crackDecay * 2);
-    ad(cg.gain, t0, 1.05 * nearP * jL * profile.level, 0.0015, profile.crackDecay * rng.range(0.85, 1.2));
+    ad(cg.gain, t0, 1.05 * snap * nearP * jL * profile.level, 0.0015, profile.crackDecay * rng.range(0.85, 1.2));
     src.start(t0, src._offset, profile.crackDecay * 3 + 0.05);
     end = Math.max(end, t0 + profile.crackDecay * 3);
   }
