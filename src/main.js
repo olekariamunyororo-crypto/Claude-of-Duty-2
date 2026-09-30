@@ -19,10 +19,6 @@ import { prewarm } from './core/prewarm.js';
 
 const params = new URLSearchParams(location.search);
 const capture = params.get('capture') === '1';
-// Deterministic shutter for the pixel gate: the engine does not schedule its own
-// frames, the driver advances exactly N of them through window.__PUMP__. Opt-in,
-// because tools that measure real frame pacing (tools/perf.mjs) need the loop to
-// free-run. See the long comment in src/dev/shots.js.
 const lockstep = capture && params.get('lockstep') === '1';
 
 const isMobile = detectMobile(params);
@@ -45,7 +41,6 @@ const canvas = document.getElementById('game');
 const engine = new Engine({ canvas, config });
 if (config.timeScale != null) engine.time.scale = config.timeScale;
 
-// Registration order is irrelevant — Registry topo-sorts on static deps.
 engine
   .add(RenderSystem)
   .add(MaterialSystem)
@@ -74,21 +69,12 @@ BOOT FAILURE\n\n${err.stack ?? err.message}</pre>`
 
 const shotApi = installShotApi(engine, { capture, lockstep });
 
-// Compile every shader permutation before the frame loop starts. Measured: without
-// this, 86 programs compile lazily during play, up to 30 on one frame, producing
-// 3.1-3.9 SECOND stalls. See src/core/prewarm.js.
-//
-// ON BY DEFAULT since the capture path was made frame-deterministic; opt out with
-// `?prewarm=0`. It is now PROVEN pixel-neutral: `tools/baseline.mjs` with
-// `--query=prewarm=0` vs `--query=prewarm=1` reports identical:true on all 11
-// shots (0 changed pixels, maxDelta 0). The two things that previously made the
-// ~1.4 s pre-warm spend look like a visual change were both boot-duration
-// couplings OUTSIDE the subsystems: (1) the shutter frame index was latency-bound
-// because the engine kept stepping through the driver's round trips — fixed by
-// lockstep in src/dev/shots.js; (2) `will-change: transform` on the compass strip
-// cached a composited-layer raster taken at a wall-clock-dependent moment — fixed
-// in src/ui/style.js.
-const warmup = params.get('prewarm') === '0' ? { ok: false, reason: 'disabled by ?prewarm=0' } : await prewarm(engine);
+const skipWarm =
+  params.get('prewarm') === '0' ||
+  (isMobile && config.skipPrewarm !== false && params.get('prewarm') !== '1');
+const warmup = skipWarm
+  ? { ok: false, reason: isMobile ? 'skipped on mobile (set ?prewarm=1 to force)' : 'disabled by ?prewarm=0' }
+  : await prewarm(engine);
 console.info('[boot] prewarm', warmup);
 window.__PREWARM__ = warmup;
 
@@ -109,13 +95,6 @@ engine.start();
   }
 }
 
-
-// Capture harness handshake: only flag ready once a frame has actually landed.
-//
-// BOOT_FRAMES is deliberately a frame COUNT, not a rAF race. In lockstep mode the
-// engine has no loop of its own, so we hand-pump exactly this many frames and only
-// then raise __READY__; the shot is therefore always applied at engine frame 3, no
-// matter how long boot (or pre-warm) took in wall-clock terms.
 const BOOT_FRAMES = 3;
 if (lockstep) {
   await shotApi.pump(BOOT_FRAMES);
