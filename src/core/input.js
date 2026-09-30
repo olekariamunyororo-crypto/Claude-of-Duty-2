@@ -265,6 +265,12 @@ export class Input {
     return out;
   }
   // ---- mobile touch (MOBILE_TOUCH_PATCH) ---------------------------------
+
+  _unlockAudio() {
+    const a = (typeof window !== 'undefined') ? window.__AUDIO__ : null;
+    if (a && !a.running && !a.failed) a.start().catch(() => {});
+    else if (a?.actx?.state === 'suspended') a.actx.resume().catch(() => {});
+  }
   _setupTouch() {
     const ui = document.getElementById('touch-ui');
     if (ui) ui.classList.add('on');
@@ -284,6 +290,7 @@ export class Input {
     const on = (el, type, fn, opts) => { if (el) el.addEventListener(type, fn, opts || { passive: false }); };
     const stickEl = this._stickZone || this._stickBase;
     on(stickEl, 'touchstart', (e) => {
+      this._unlockAudio();
       e.preventDefault(); e.stopPropagation();
       const t = e.changedTouches[0];
       this._touchStickId = t.identifier;
@@ -297,6 +304,7 @@ export class Input {
       this._updateStick(t.clientX, t.clientY);
     });
     on(this._lookZone, 'touchstart', (e) => {
+      this._unlockAudio();
       const tag = e.target && e.target.id;
       if (tag === 'btn-fire' || tag === 'btn-jump' || tag === 'btn-reload' || tag === 'btn-ads') return;
       e.preventDefault();
@@ -323,7 +331,7 @@ export class Input {
     on(window, 'touchcancel', (e) => this._touchEnd(e));
     const hold = (el, code) => {
       if (!el) return;
-      const down = (e) => { e.preventDefault(); e.stopPropagation(); this._pendingDown.add(code); };
+      const down = (e) => { this._unlockAudio(); e.preventDefault(); e.stopPropagation(); this._pendingDown.add(code); };
       const up = (e) => { e.preventDefault(); e.stopPropagation(); this._pendingUp.add(code); };
       on(el, 'touchstart', down); on(el, 'touchend', up); on(el, 'touchcancel', up);
     };

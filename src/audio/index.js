@@ -138,15 +138,19 @@ export class AudioSystem {
       this.start().catch(() => {});
     };
     this._gestureHandler = kick;
+    // capture:true — mobile FIRE/JUMP call stopPropagation(); without capture audio never unlocks.
     if (typeof addEventListener === 'function') {
-      for (const ev of GESTURES) addEventListener(ev, kick, { passive: true });
+      for (const ev of GESTURES) addEventListener(ev, kick, { passive: true, capture: true });
     }
     if (typeof window !== 'undefined') window.__AUDIO__ = this;
   }
 
   _disarmGesture() {
     if (!this._gestureHandler) return;
-    for (const ev of GESTURES) removeEventListener(ev, this._gestureHandler);
+    for (const ev of GESTURES) {
+      removeEventListener(ev, this._gestureHandler, true);
+      removeEventListener(ev, this._gestureHandler, false);
+    }
     this._gestureHandler = null;
   }
 
@@ -164,7 +168,9 @@ export class AudioSystem {
       this.actx = actx;
 
       this.bank = new NoiseBank(actx, this.rng.fork(), 2.4);
-      this.mixer = new Mixer(actx, this.rng.fork(), {});
+      this.mixer = new Mixer(actx, this.rng.fork(), {
+        masterVolume: this.ctx?.config?.mobile ? 1.0 : 0.95,
+      });
       this.mixer.buildReverbs();
       this.field = new SpatialField(actx, this.mixer, this.ctx);
       this.ambience = new Ambience(actx, this.bank, this.mixer, this.field, this.rng.fork());
@@ -172,10 +178,17 @@ export class AudioSystem {
       this.mixer.setSpace(this._space, 0.001);
 
       if (actx.state === 'suspended') await actx.resume();
+      try {
+        const buf = actx.createBuffer(1, 1, actx.sampleRate);
+        const src = actx.createBufferSource();
+        src.buffer = buf;
+        src.connect(actx.destination);
+        src.start(0);
+      } catch { /* ignore */ }
       this.running = true;
       this.stats.started = true;
       this.stats.contextState = actx.state;
-      console.info(`[audio] online @ ${actx.sampleRate} Hz`);
+      console.info(`[audio] online @ \( {actx.sampleRate} Hz state= \){actx.state}`);
       return true;
     } catch (err) {
       console.warn('[audio] disabled:', err?.message ?? err);
@@ -214,7 +227,10 @@ export class AudioSystem {
     if (!this.running) return;
     try {
       const actx = this.actx;
-      if (actx.state === 'suspended') return; // tab hidden, or resume pending
+      if (actx.state === 'suspended') {
+        actx.resume().catch(() => {});
+        return;
+      }
 
       /* ---- listener from the render camera ----------------------- */
       const cam = ctx.camera;
