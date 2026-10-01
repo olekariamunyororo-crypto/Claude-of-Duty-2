@@ -92,7 +92,7 @@ const GEAR = {
   // A hard ballistic mask is moulded polymer, not webbing: near-black with a
   // clean sheen, which is what makes the lower face read as a mask at 35 m
   // instead of another patch of tan cloth.
-  mask: [0.62, 0.63, 0.66],
+  mask: [0.38, 0.39, 0.42],
 };
 
 /**
@@ -145,25 +145,23 @@ export const VARIANTS = {
   },
   breacher: {
     camo: 'urban',
-    clothTint: [0.98, 0.99, 1.02],
-    gearTint: [0.84, 0.86, 0.90], // wolf grey
-    plateTint: [0.86, 0.88, 0.92],
-    skinTint: [1.06, 0.98, 0.92],
+    clothTint: [0.92, 0.94, 0.98],
+    gearTint: [0.72, 0.74, 0.78],
+    plateTint: [0.78, 0.80, 0.86],
+    skinTint: [1.04, 0.96, 0.90],
     helmet: true,
-    helmetCover: false, // bare painted shell instead of a cloth cover
-    helmetTint: [0.82, 0.83, 0.86],
-    // goggles parked on the shell (not over the eyes like vanguard) plus a hard
-    // ballistic half-mask: same helmet family, completely different head read
+    helmetCover: false,
+    helmetTint: [0.55, 0.56, 0.60],
     goggles: true,
     gogglesDown: false,
     faceWrap: true,
     maskHard: true,
-    beard: true,
+    beard: false,
     kneePads: true,
     fullCarrier: true,
     weapon: 'carbine',
-    bulk: 1.06,
-    scale: 1.025,
+    bulk: 1.12,
+    scale: 1.04,
   },
 };
 

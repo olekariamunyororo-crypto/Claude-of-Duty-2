@@ -479,7 +479,7 @@ export function helmet(nz, base, p = {}) {
   const out = emptyMesh();
   const bx = base[0], by = base[1], bz = base[2];
   const cy = by + 0.100; // shell centre (just above the brow)
-  const rx = 0.121, ry = 0.158, rz = 0.135;
+  const rx = 0.128, ry = 0.168, rz = 0.142;
 
   // --- shell: revolved dome, bottom edge scalloped per angle
   const seg = 26, rows = 12;
