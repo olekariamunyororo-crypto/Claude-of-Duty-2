@@ -26,8 +26,10 @@ export const MOBILE_PROFILE = {
   dynResMin: 0.28,
   dynResMax: 0.5,
   aiSquads: 1,
-  aiPerSquad: 2,
+  aiPerSquad: 1,
   aiPathsPerFrame: 1,
+  navCell: 2.2,
+  skipCoverMap: true,
   skipPrewarm: true,
   ldrTargets: true,
   dprCap: 1,
@@ -74,6 +76,8 @@ export function applyMobileProfile(config, profile = MOBILE_PROFILE) {
   config.aiSquads = profile.aiSquads;
   config.aiPerSquad = profile.aiPerSquad;
   config.aiPathsPerFrame = profile.aiPathsPerFrame;
+  config.navCell = profile.navCell;
+  config.skipCoverMap = profile.skipCoverMap;
   config.skipPrewarm = profile.skipPrewarm;
   config.ldrTargets = profile.ldrTargets;
   config.dprCap = profile.dprCap;
