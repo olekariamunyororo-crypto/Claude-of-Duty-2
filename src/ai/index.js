@@ -477,25 +477,34 @@ export class AiSystem {
   }
 
   /** Populate once and never throw: retry a few frames, then give up. */
+  /** Populate once. Retries while nav is building; never permanently silent. */
   _tryPopulate(ctx) {
-    if (this._populated || this._navPending) return;
-    if (ctx.config.deterministic && !this.forcePopulate) return;
-    if ((this._populateTries | 0) >= 5) return;
+    if (this._populated) return;
+    if (ctx.config.deterministic && !this.forcePopulate) {
+      if (!this._loggedCaptureSkip) {
+        this._loggedCaptureSkip = true;
+        console.warn('[ai] populate skipped (deterministic/capture mode). Open URL without ?capture=1');
+      }
+      return;
+    }
+    this._populateFrame = (this._populateFrame | 0) + 1;
+    if (this._navPending && this._populateFrame < 8) return;
+    if ((this._populateTries | 0) >= 12) return;
     this._populateTries = (this._populateTries | 0) + 1;
     try {
-      this.populate();
+      const n = this.populate({ force: true });
+      if (n > 0) this._populated = true;
     } catch (err) {
-      if (this.agents.length > 0) this._populated = true; // avoid duplicates on retry
+      if (this.agents.length > 0) this._populated = true;
       console.error(`[ai] populate failed (try ${this._populateTries}):`, err);
     }
   }
 
   /**
-   * Garrison the level. Slots in front of the camera come first so enemies are
-   * visible on load; world spawn points are the fallback.
+   * Garrison: always put enemies in front of the camera.
+   * Works even when the nav grid is not ready yet.
    */
   populate(opts = {}) {
-    if (!this.grid) return 0;
     if (this._populated && !opts.force) return this.agents.length;
 
     const cfg = this.ctx?.config;
@@ -503,13 +512,11 @@ export class AiSystem {
     const per = Math.max(1, opts.perSquad ?? cfg?.aiPerSquad ?? 3);
     const total = squads * per;
     const variants = ['vanguard', 'irregular', 'breacher'];
-    const minDist = opts.minDist ?? 10;
-    const frontDist = opts.frontDist ?? 12;
+    const frontDist = opts.frontDist ?? 9;
 
     const cam = this.ctx.camera;
     if (cam?.updateMatrixWorld) cam.updateMatrixWorld(true);
     const player = this.playerPosition(this._v3).clone();
-    const playerFeetY = player.y - 1.35;
 
     const fwd = new THREE.Vector3();
     if (cam?.getWorldDirection) cam.getWorldDirection(fwd);
@@ -521,80 +528,50 @@ export class AiSystem {
     if (right.lengthSq() < 1e-8) right.set(1, 0, 0);
     else right.normalize();
 
-    const anchors = [];
-    for (let i = 0; i < total; i++) {
-      const col = (i % 3) - 1;
-      const row = (i / 3) | 0;
-      const dist = frontDist + row * 3.0 + this.rng.range(-0.5, 0.5);
-      const lateral = col * 2.6 + this.rng.range(-0.4, 0.4);
-      const p = player.clone().addScaledVector(fwd, dist).addScaledVector(right, lateral);
-      p.y = playerFeetY;
-      anchors.push({ position: p, yaw: Math.atan2(player.x - p.x, player.z - p.z) });
-    }
-    const spawns = (this.ctx.peek('world')?.spawnPoints ?? [])
-      .filter((s) => {
-        const d = s.position.distanceTo(player);
-        return d >= minDist && d < 80;
-      })
-      .sort((a, b) => a.position.distanceTo(player) - b.position.distanceTo(player));
-    for (const s of spawns) anchors.push({ position: s.position.clone(), yaw: s.yaw ?? 0 });
-
-    const used = [];
-    const placeNear = (approx) => {
+    const snap = (approx) => {
       const p = approx.clone();
-      const ci = this.grid.nearest(p.x, p.z, playerFeetY, 14, 3.0);
-      if (ci >= 0) {
-        p.set(
-          this.grid.worldX(ci % this.grid.nx),
-          this.grid.floor[ci],
-          this.grid.worldZ((ci / this.grid.nx) | 0),
-        );
-      } else {
-        p.y = this.groundAt(p.x, p.z, player.y + 6);
+      if (this.grid) {
+        const ci = this.grid.nearest(p.x, p.z, player.y - 1.2, 16, 4.0);
+        if (ci >= 0) {
+          p.set(
+            this.grid.worldX(ci % this.grid.nx),
+            this.grid.floor[ci],
+            this.grid.worldZ((ci / this.grid.nx) | 0),
+          );
+          return p;
+        }
       }
-      for (const u of used) if (u.distanceToSquared(p) < 1.44) return null;
-      if (p.distanceToSquared(player) < 25) return null;
-      used.push(p.clone());
+      p.y = this.groundAt(p.x, p.z, player.y + 8);
       return p;
     };
 
     let made = 0;
-    let squad = null;
-    for (let k = 0; k < anchors.length * 2 && made < total; k++) {
-      const anchor = anchors[k % anchors.length];
-      const ja = this.rng.range(0, Math.PI * 2);
-      const jr = this.rng.range(0.4, 2.4);
-      const approx = anchor.position.clone().add(
-        new THREE.Vector3(Math.cos(ja) * jr, 0, Math.sin(ja) * jr),
-      );
-      const p = placeNear(approx);
-      if (!p) continue;
-      if (!squad || squad.members.length >= per) squad = this.createSquad();
-      const patrol = [
-        p.clone(),
-        p.clone().addScaledVector(right, 2.5),
-        p.clone().addScaledVector(fwd, 2.0),
-      ];
-      const a = this.spawn(variants[made % variants.length], p, anchor.yaw + this.rng.signed() * 0.4, { patrol });
+    let squad = this.createSquad();
+    for (let i = 0; i < total; i++) {
+      if (i > 0 && i % per === 0) squad = this.createSquad();
+      const col = (i % 3) - 1;
+      const row = (i / 3) | 0;
+      const dist = frontDist + row * 2.8;
+      const lateral = col * 2.5;
+      const approx = player.clone()
+        .addScaledVector(fwd, dist)
+        .addScaledVector(right, lateral);
+      const p = snap(approx);
+      const yaw = Math.atan2(player.x - p.x, player.z - p.z);
+      const a = this.spawn(variants[i % variants.length], p, yaw, {
+        patrol: [p.clone(), p.clone().addScaledVector(right, 2), p.clone().addScaledVector(fwd, 1.5)],
+      });
       squad.add(a);
       made++;
     }
 
-    if (made === 0) {
-      squad = this.createSquad();
-      for (let i = 0; i < per; i++) {
-        const p = player.clone().addScaledVector(fwd, 8 + i * 2).addScaledVector(right, (i - 1) * 2);
-        p.y = this.groundAt(p.x, p.z, player.y + 6);
-        const yaw = Math.atan2(player.x - p.x, player.z - p.z);
-        squad.add(this.spawn(variants[i % variants.length], p, yaw, { patrol: [p.clone()] }));
-        made++;
-      }
-    }
-
     this._populated = made > 0;
-    const f = (v) => v.toArray().map((n) => +n.toFixed(1));
-    console.info(`[ai] garrison: ${made}/${total} enemies (${squads}x${per}) walkable=${this.grid.walkableCount} anchors=${anchors.length}`);
-    console.info('[ai] player', f(player), 'enemies', this.agents.map((a) => f(a.position)));
+    if (typeof window !== 'undefined') window.__AI__ = this;
+    const f = (v) => (v?.toArray?.() ?? [0, 0, 0]).map((n) => +Number(n).toFixed(1));
+    console.info(
+      `[ai] garrison: \( {made}/ \){total} (front \( {frontDist}m) navPending= \){!!this._navPending} walkable=${this.grid?.walkableCount ?? 0}`,
+    );
+    console.info('[ai] player', f(player), 'enemies', this.agents.slice(0, made).map((a) => f(a.position)));
     return made;
   }
 
