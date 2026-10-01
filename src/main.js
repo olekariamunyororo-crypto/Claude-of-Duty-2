@@ -80,6 +80,44 @@ window.__PREWARM__ = warmup;
 
 engine.start();
 
+// Force AI garrison in front of player after boot (retries until agents exist).
+{
+  let tries = 0;
+  const forceGarrison = () => {
+    tries++;
+    const ai = engine.ctx?.peek?.('ai');
+    if (!ai) {
+      if (tries < 40) setTimeout(forceGarrison, 250);
+      return;
+    }
+    window.__AI__ = ai;
+    if (ai.agents?.length > 0) {
+      console.info('[boot] garrison already present:', ai.agents.length);
+      return;
+    }
+    try {
+      ai.forcePopulate = true;
+      ai._populated = false;
+      ai._populateTries = 0;
+      ai._populateFrame = 99;
+      ai._navPending = false;
+      const n = ai.populate({
+        force: true,
+        frontDist: 6,
+        squads: ai.ctx?.config?.aiSquads ?? 1,
+        perSquad: ai.ctx?.config?.aiPerSquad ?? 2,
+      });
+      console.info('[boot] forceGarrison result', n, 'agents', ai.agents.length);
+      if ((!n || ai.agents.length === 0) && tries < 40) setTimeout(forceGarrison, 300);
+    } catch (err) {
+      console.error('[boot] forceGarrison error', err);
+      if (tries < 40) setTimeout(forceGarrison, 400);
+    }
+  };
+  setTimeout(forceGarrison, 800);
+}
+
+
 {
   const boot = document.getElementById('boot');
   const hide = () => {

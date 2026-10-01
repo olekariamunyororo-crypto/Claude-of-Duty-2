@@ -107,7 +107,7 @@ export class Agent {
     this.mesh = new THREE.SkinnedMesh(def.geometry, def.materials);
     this.mesh.castShadow = true;
     this.mesh.receiveShadow = true;
-    this.mesh.frustumCulled = true;
+    this.mesh.frustumCulled = false;
     this.mesh.userData.agent = this;
     this.group = new THREE.Group();
     this.group.name = `enemy${this.id}`;

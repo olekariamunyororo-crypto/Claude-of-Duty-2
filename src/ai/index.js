@@ -471,9 +471,15 @@ export class AiSystem {
   /* ================================================================== */
 
   spawn(variantName, position, yaw = 0, opts = {}) {
-    const a = new Agent(this, { variant: variantName, position, yaw, ...opts });
-    this.agents.push(a);
-    return a;
+    try {
+      const a = new Agent(this, { variant: variantName, position, yaw, ...opts });
+      this.agents.push(a);
+      console.info(`[ai] spawn ${variantName}`, position?.x?.toFixed?.(1), position?.y?.toFixed?.(1), position?.z?.toFixed?.(1));
+      return a;
+    } catch (err) {
+      console.error('[ai] spawn FAILED', variantName, err);
+      throw err;
+    }
   }
 
   /** Populate once and never throw: retry a few frames, then give up. */
@@ -488,7 +494,6 @@ export class AiSystem {
       return;
     }
     this._populateFrame = (this._populateFrame | 0) + 1;
-    if (this._navPending && this._populateFrame < 8) return;
     if ((this._populateTries | 0) >= 12) return;
     this._populateTries = (this._populateTries | 0) + 1;
     try {
@@ -512,7 +517,7 @@ export class AiSystem {
     const per = Math.max(1, opts.perSquad ?? cfg?.aiPerSquad ?? 3);
     const total = squads * per;
     const variants = ['vanguard', 'irregular', 'breacher'];
-    const frontDist = opts.frontDist ?? 9;
+    const frontDist = opts.frontDist ?? 6;
 
     const cam = this.ctx.camera;
     if (cam?.updateMatrixWorld) cam.updateMatrixWorld(true);
