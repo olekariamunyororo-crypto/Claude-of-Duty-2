@@ -122,6 +122,30 @@ window.__PREWARM__ = warmup;
 
 engine.start();
 
+{
+  let softTries = 0;
+  const forceGarrisonSoft = () => {
+    softTries++;
+    const ai = engine.ctx?.peek?.('ai');
+    if (!ai) { if (softTries < 50) setTimeout(forceGarrisonSoft, 200); return; }
+    window.__AI__ = ai;
+    if (ai.agents?.length > 0) { console.info('[boot] agents already:', ai.agents.length); return; }
+    try {
+      ai.forcePopulate = true;
+      ai._populated = false;
+      ai._populateTries = 0;
+      const n = ai.populate({ force: true, frontDist: 5, squads: 1, perSquad: 2 });
+      console.info('[boot] softGarrison', n, 'agents', ai.agents?.length);
+      if ((!n || !ai.agents?.length) && softTries < 50) setTimeout(forceGarrisonSoft, 400);
+    } catch (e) {
+      console.error('[boot] softGarrison error', e);
+      if (softTries < 50) setTimeout(forceGarrisonSoft, 500);
+    }
+  };
+  setTimeout(forceGarrisonSoft, 1200);
+}
+
+
 
 
 {

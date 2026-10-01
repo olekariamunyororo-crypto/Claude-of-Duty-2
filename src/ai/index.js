@@ -513,11 +513,15 @@ export class AiSystem {
       return;
     }
     this._populateFrame = (this._populateFrame | 0) + 1;
-    if ((this._populateTries | 0) >= 12) return;
+    if (this._navPending && this._populateFrame < 45) return;
+    if ((this._populateTries | 0) >= 30) {
+      if ((this._populateFrame % 90) === 0) this._populateTries = 0;
+      else return;
+    }
     this._populateTries = (this._populateTries | 0) + 1;
     try {
       const n = this.populate({ force: true });
-      if (n > 0) this._populated = true;
+      if (n > 0 || this.agents.length > 0) this._populated = true;
     } catch (err) {
       if (this.agents.length > 0) this._populated = true;
       console.error(`[ai] populate failed (try ${this._populateTries}):`, err);
@@ -535,8 +539,8 @@ export class AiSystem {
     const squads = Math.max(1, opts.squads ?? cfg?.aiSquads ?? 2);
     const per = Math.max(1, opts.perSquad ?? cfg?.aiPerSquad ?? 3);
     const total = squads * per;
-    const variants = ['vanguard', 'irregular', 'breacher'];
-    const frontDist = opts.frontDist ?? 6;
+    const variants = ['breacher', 'breacher', 'breacher'];
+    const frontDist = opts.frontDist ?? 5;
 
     const cam = this.ctx.camera;
     if (cam?.updateMatrixWorld) cam.updateMatrixWorld(true);
