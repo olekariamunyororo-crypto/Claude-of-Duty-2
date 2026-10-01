@@ -162,14 +162,9 @@ const CSS = `
   background: radial-gradient(ellipse 76% 70% at 50% 50%, rgba(0,0,0,0) 64%, rgba(150,14,10,.34) 100%);
 }
 
-/* ====================================================== vitals (bottom left)
-   The most important number on the screen, so it gets the mirror position to
-   the ammo block: bottom-left of the safe area, labelled, with a numeric
-   readout and a genuinely dark track so the empty part of the bar is legible
-   over sunlit gravel. Armour is a visually distinct second row — thinner,
-   cyan, plate-segmented — so it can never be mistaken for health. */
+/* ====================================================== vitals (top left) */
 .ow-vitals {
-  position:absolute; left:var(--pad); bottom:var(--pad);
+  position:absolute; left:var(--pad); top:var(--pad);
   width: calc(196px * var(--k));
 }
 .ow-vt-head {
@@ -241,7 +236,7 @@ const CSS = `
    equipment counts get their own row above the weapon name rather than sharing
    the head row, which is what used to collide. */
 .ow-ammo {
-  position:absolute; right:var(--pad); bottom:var(--pad);
+  position:absolute; right:var(--pad); top:var(--pad);
   --ammo-w: calc(168px * var(--k));
   --gut: calc(8px * var(--k));
   width: var(--ammo-w);
@@ -325,7 +320,7 @@ const CSS = `
 
 /* ============================================================== killfeed */
 .ow-killfeed {
-  position:absolute; right:var(--pad); top:calc(var(--pad) + var(--u) * 2);
+  position:absolute; right:var(--pad); top:calc(var(--pad) + 118px * var(--k));
   display:flex; flex-direction:column; align-items:flex-end;
   gap: calc(var(--u) * 1.1);
 }

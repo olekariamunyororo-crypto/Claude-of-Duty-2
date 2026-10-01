@@ -37,7 +37,7 @@ function flashIcon(parent) {
 }
 
 /**
- * Ammo / weapon readout, bottom right.
+ * Ammo / weapon readout, top right.
  *
  *              ▲ 2   ✦ 1     equipment — its OWN row
  *   [AUTO]        M4A1
