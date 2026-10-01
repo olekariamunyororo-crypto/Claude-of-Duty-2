@@ -38,6 +38,48 @@ console.info(
 
 const canvas = document.getElementById('game');
 
+// ---- AI debug panel: open the game with ?aidebug=1 ----
+if (new URLSearchParams(location.search).get('aidebug') === '1') {
+  const lines = [];
+  const fmt = (args) => {
+    try {
+      return Array.prototype.map.call(args, (x) => {
+        if (x instanceof Error) return x.message + ' @ ' + String(x.stack || '').split('\n')[1];
+        return typeof x === 'object' ? JSON.stringify(x) : String(x);
+      }).join(' ');
+    } catch (e) { return '(unprintable)'; }
+  };
+  const add = (t) => { lines.push(String(t).slice(0, 200)); if (lines.length > 28) lines.shift(); };
+  for (const lvl of ['info', 'warn', 'error']) {
+    const orig = console[lvl].bind(console);
+    console[lvl] = (...a) => {
+      const t = fmt(a);
+      if (lvl !== 'info' || t.indexOf('[ai]') >= 0 || t.indexOf('[boot]') >= 0) {
+        add((lvl === 'info' ? '' : lvl.toUpperCase() + ' ') + t);
+      }
+      orig(...a);
+    };
+  }
+  window.addEventListener('error', (e) => add('ERROR ' + e.message));
+  window.addEventListener('unhandledrejection', (e) => add('REJECT ' + ((e.reason && e.reason.message) || e.reason)));
+  const box = document.createElement('pre');
+  box.style.cssText = 'position:fixed;left:0;top:0;right:0;max-height:55vh;overflow:hidden;margin:0;padding:4px;' +
+    'font:9px/1.25 monospace;color:#0f0;background:rgba(0,0,0,.72);z-index:99999;pointer-events:none;white-space:pre-wrap';
+  document.body.appendChild(box);
+  setInterval(() => {
+    let st;
+    try {
+      const ai = engine.ctx.peek('ai');
+      const c = engine.ctx.camera.position;
+      const f = (v) => [v.x, v.y, v.z].map((n) => n.toFixed(1)).join(',');
+      st = 'agents=' + ai.agents.length + ' navPending=' + ai._navPending +
+        ' grid=' + (ai.grid ? ai.grid.walkableCount : 'none') + ' mobile=' + !!engine.ctx.config.mobile +
+        ' cam=' + f(c) + (ai.agents[0] ? ' first=' + f(ai.agents[0].position) : '');
+    } catch (e) { st = 'status n/a: ' + e.message; }
+    box.textContent = 'AIDEBUG ' + st + '\n' + lines.join('\n');
+  }, 500);
+}
+
 const engine = new Engine({ canvas, config });
 if (config.timeScale != null) engine.time.scale = config.timeScale;
 
@@ -80,42 +122,6 @@ window.__PREWARM__ = warmup;
 
 engine.start();
 
-// Force AI garrison in front of player after boot (retries until agents exist).
-{
-  let tries = 0;
-  const forceGarrison = () => {
-    tries++;
-    const ai = engine.ctx?.peek?.('ai');
-    if (!ai) {
-      if (tries < 40) setTimeout(forceGarrison, 250);
-      return;
-    }
-    window.__AI__ = ai;
-    if (ai.agents?.length > 0) {
-      console.info('[boot] garrison already present:', ai.agents.length);
-      return;
-    }
-    try {
-      ai.forcePopulate = true;
-      ai._populated = false;
-      ai._populateTries = 0;
-      ai._populateFrame = 99;
-      ai._navPending = false;
-      const n = ai.populate({
-        force: true,
-        frontDist: 6,
-        squads: ai.ctx?.config?.aiSquads ?? 1,
-        perSquad: ai.ctx?.config?.aiPerSquad ?? 2,
-      });
-      console.info('[boot] forceGarrison result', n, 'agents', ai.agents.length);
-      if ((!n || ai.agents.length === 0) && tries < 40) setTimeout(forceGarrison, 300);
-    } catch (err) {
-      console.error('[boot] forceGarrison error', err);
-      if (tries < 40) setTimeout(forceGarrison, 400);
-    }
-  };
-  setTimeout(forceGarrison, 800);
-}
 
 
 {

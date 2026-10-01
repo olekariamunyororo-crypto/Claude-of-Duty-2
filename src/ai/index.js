@@ -470,7 +470,26 @@ export class AiSystem {
   /* spawning                                                           */
   /* ================================================================== */
 
+  /** Mobile bakes only some camo sets: map a variant to one whose material exists. */
+  _bakedVariant(name) {
+    const sets = this.materials && this.materials.sets;
+    const V = VARIANTS[name];
+    if (!sets || !V || sets['camo_' + V.camo]) return name;
+    for (const k in VARIANTS) {
+      if (sets['camo_' + VARIANTS[k].camo]) {
+        this._remapped = this._remapped || {};
+        if (!this._remapped[name]) {
+          this._remapped[name] = true;
+          console.info('[ai] variant ' + name + ' -> ' + k + ' (camo_' + V.camo + ' not baked on this profile)');
+        }
+        return k;
+      }
+    }
+    return name;
+  }
+
   spawn(variantName, position, yaw = 0, opts = {}) {
+    variantName = this._bakedVariant(variantName);
     try {
       const a = new Agent(this, { variant: variantName, position, yaw, ...opts });
       this.agents.push(a);
@@ -573,9 +592,7 @@ export class AiSystem {
     this._populated = made > 0;
     if (typeof window !== 'undefined') window.__AI__ = this;
     const f = (v) => (v?.toArray?.() ?? [0, 0, 0]).map((n) => +Number(n).toFixed(1));
-    console.info(
-      `[ai] garrison: \( {made}/ \){total} (front \( {frontDist}m) navPending= \){!!this._navPending} walkable=${this.grid?.walkableCount ?? 0}`,
-    );
+    console.info('[ai] garrison: ' + made + ' spawned, navPending=' + !!this._navPending + ', walkable=' + (this.grid ? this.grid.walkableCount : 0));
     console.info('[ai] player', f(player), 'enemies', this.agents.slice(0, made).map((a) => f(a.position)));
     return made;
   }
