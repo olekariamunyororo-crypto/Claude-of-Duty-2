@@ -658,9 +658,9 @@ export function buildSoldier(name, { rng, materials }) {
   /* ---------------- hands + weapon ----------------------------------- */
   const bore = new THREE.Vector3(...BORE_DIR).normalize();
   const palmR = new THREE.Vector3(-0.55, 0.35, -0.75).normalize();
-  const palmL = new THREE.Vector3(0.75, 0.30, -0.60).normalize();
-  const gripAxisR = new THREE.Vector3(0.18, 0.92, -0.34).normalize(); // down the grip
-  const gripAxisL = bore.clone();
+  const palmL = new THREE.Vector3(0.25, 0.88, -0.40).normalize();
+  const gripAxisR = new THREE.Vector3(0.18, 0.92, -0.34).normalize();
+  const gripAxisL = bore.clone().add(new THREE.Vector3(0.12, 0.08, 0)).normalize();
 
   B.add(P.glove(nz, wrR, [gripAxisR.x, gripAxisR.y, gripAxisR.z], [palmR.x, palmR.y, palmR.z], -1), {
     material: 'boot',

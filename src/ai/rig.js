@@ -67,13 +67,13 @@ function alongBore(t, dropY) {
 
 /** Firing hand (pistol grip) and support hand (handguard) in bind pose. */
 export const GRIP_R = alongBore(0.26, 0.095);
-export const GRIP_L = alongBore(0.45, 0.05);
+export const GRIP_L = alongBore(0.40, 0.078);
 
 const SHOULDER_R = [-0.172, 1.425, 0.004];
 const SHOULDER_L = [0.172, 1.425, 0.004];
 
 const ELBOW_R = solveElbow(SHOULDER_R, GRIP_R, UPPER_ARM, FOREARM, [-0.35, -1, -0.45]);
-const ELBOW_L = solveElbow(SHOULDER_L, GRIP_L, UPPER_ARM, FOREARM, [0.55, -1, -0.2]);
+const ELBOW_L = solveElbow(SHOULDER_L, GRIP_L, UPPER_ARM, FOREARM, [0.95, -0.55, -0.45]);
 
 /* -------------------------------------------------------------------- */
 /* Bone table                                                           */
@@ -99,7 +99,7 @@ export const BONES = [
   ['UpperArmL', 'ClavicleL', SHOULDER_L],
   ['ForearmL', 'UpperArmL', [ELBOW_L.x, ELBOW_L.y, ELBOW_L.z]],
   ['HandL', 'ForearmL', GRIP_L],
-  ['FingersL', 'HandL', null, null, [-0.32, -0.30, 0.90]],
+  ['FingersL', 'HandL', null, null, [-0.22, -0.15, 0.96]],
 
   ['UpLegR', 'Hips', [-0.092, 0.945, 0.0]],
   ['LegR', 'UpLegR', [-0.098, 0.505, 0.02]],
