@@ -67,7 +67,7 @@ export class FxSystem {
     const addCap = rest - litCap;
 
     /** Particles spawned per impact scale with the budget. */
-    this.pScale = clamp(budget / 12000, 0.4, 1.25);
+    this.pScale = clamp(budget / 12000, 0.12, 1.25);
 
     const mk = (capacity, modeName, renderOrder) =>
       new ParticleLayer({

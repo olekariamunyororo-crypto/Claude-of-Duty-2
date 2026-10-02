@@ -49,7 +49,7 @@ export function applyMobileProfile(config, profile = MOBILE_PROFILE) {
     config.q.taa = false;
     config.q.gtao = false;
     config.q.ssr = false;
-    config.q.particleBudget = Math.min(config.q.particleBudget || 220, 220);
+    config.q.particleBudget = Math.min(config.q.particleBudget || 120, 120);
   }
   config.physicsHz = 30;
   config.maxSubsteps = 8;

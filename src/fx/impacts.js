@@ -552,7 +552,7 @@ function wood(fx, p, n, inc, e) {
   const rz = (V.z + n.z) * 0.5;
   let s;
 
-  const nSpl = Math.round(11 * q) + 4;
+  const nSpl = Math.max(1, Math.round(2 * q));
   for (let i = 0; i < nSpl; i++) {
     cone(V2, rng, rx, ry, rz, 0.9, 1.3);
     const sp = rng.range(2.5, 7.5);
@@ -560,10 +560,10 @@ function wood(fx, p, n, inc, e) {
     s.x = p.x + n.x * 0.01; s.y = p.y + n.y * 0.01; s.z = p.z + n.z * 0.01;
     s.vx = V2.x * sp; s.vy = V2.y * sp; s.vz = V2.z * sp;
     s.tile = i % 4 === 0 ? P.CHIP : P.SPLINTER;
-    s.size0 = rng.range(0.014, 0.045);
-    s.size1 = s.size0;
-    s.life = rng.range(0.6, 1.2);
-    s.drag = 0.8; s.gravity = -18;
+    s.size0 = rng.range(0.008, 0.02);
+    s.size1 = s.size0 * 0.7;
+    s.life = rng.range(0.18, 0.35);
+    s.drag = 1.0; s.gravity = -26;
     s.rot = rng.float() * TWO_PI; s.spin = rng.signed() * 26;
     s.r0 = 0.44; s.g0 = 0.3; s.b0 = 0.16;
     s.r1 = 0.36; s.g1 = 0.24; s.b1 = 0.13;
@@ -624,7 +624,7 @@ function ground(fx, p, n, inc, e, sand) {
     s.soft = 0.14; s.turb = 0.08; s.turbFreq = 1.6; s.seed = rng.float();
     fx.emitLit(s);
   }
-  const nClod = Math.round(13 * q) + 5;
+  const nClod = Math.max(0, Math.round(2 * q));
   for (let i = 0; i < nClod; i++) {
     cone(V2, rng, n.x, n.y, n.z, 0.95, 1.1);
     const sp = rng.range(3, 9);
@@ -632,15 +632,15 @@ function ground(fx, p, n, inc, e, sand) {
     s.x = p.x; s.y = p.y + 0.01; s.z = p.z;
     s.vx = V2.x * sp; s.vy = V2.y * sp; s.vz = V2.z * sp;
     s.tile = P.CHIP;
-    s.size0 = rng.range(0.008, sand ? 0.02 : 0.035);
-    s.size1 = s.size0;
-    s.life = rng.range(0.6, 1.2);
-    s.drag = sand ? 1.4 : 0.5;
-    s.gravity = -19;
+    s.size0 = rng.range(0.005, sand ? 0.012 : 0.016);
+    s.size1 = s.size0 * 0.6;
+    s.life = rng.range(0.15, 0.32);
+    s.drag = sand ? 1.8 : 0.8;
+    s.gravity = -28;
     s.rot = rng.float() * TWO_PI; s.spin = rng.signed() * 20;
-    s.r0 = cr * 0.8; s.g0 = cg * 0.8; s.b0 = cb * 0.8;
-    s.r1 = cr * 0.7; s.g1 = cg * 0.7; s.b1 = cb * 0.7;
-    s.alphaCurve = 0.3; s.soft = 0.06; s.seed = rng.float();
+    s.r0 = cr * 1.1; s.g0 = cg * 1.1; s.b0 = cb * 1.1;
+    s.r1 = cr * 0.9; s.g1 = cg * 0.9; s.b1 = cb * 0.9;
+    s.alphaCurve = 0.7; s.soft = 0.08; s.seed = rng.float();
     fx.emitLit(s);
   }
   // The crater a rifle round digs in soil is 8-15 cm, not a third of a metre;
@@ -669,7 +669,7 @@ function glass(fx, p, n, inc, e) {
   const fz0 = inc.z * 0.8 - n.z * 0.2;
   let s;
 
-  const nShard = Math.round(14 * q) + 5;
+  const nShard = Math.max(1, Math.round(2 * q));
   for (let i = 0; i < nShard; i++) {
     const back = rng.float() < 0.3;
     const ax = back ? -fx0 : fx0;
@@ -682,7 +682,7 @@ function glass(fx, p, n, inc, e) {
     s.vx = V2.x * sp; s.vy = V2.y * sp; s.vz = V2.z * sp;
     s.tile = rng.float() < 0.4 ? P.SPLINTER : P.CHIP;
     s.size0 = rng.range(0.01, 0.038); s.size1 = s.size0;
-    s.life = rng.range(0.7, 1.4);
+    s.life = rng.range(0.18, 0.35);
     s.drag = 0.6; s.gravity = -19;
     s.rot = rng.float() * TWO_PI; s.spin = rng.signed() * 30;
     s.r0 = 0.72; s.g0 = 0.8; s.b0 = 0.84;
@@ -853,7 +853,7 @@ function foliage(fx, p, n, inc, e) {
     s.vx = V2.x * sp; s.vy = V2.y * sp; s.vz = V2.z * sp;
     s.tile = rng.float() < 0.5 ? P.CHIP : P.SPLINTER;
     s.size0 = rng.range(0.012, 0.035); s.size1 = s.size0;
-    s.life = rng.range(0.8, 1.6);
+    s.life = rng.range(0.2, 0.4);
     s.drag = 2.2; s.gravity = -8;
     s.rot = rng.float() * TWO_PI; s.spin = rng.signed() * 16;
     s.r0 = 0.14; s.g0 = 0.22; s.b0 = 0.08;
@@ -901,7 +901,7 @@ function soft(fx, p, n, inc, e, rubber) {
     s.vx = V2.x * sp; s.vy = V2.y * sp; s.vz = V2.z * sp;
     s.tile = P.SPLINTER;
     s.size0 = rng.range(0.01, 0.03); s.size1 = s.size0;
-    s.life = rng.range(0.6, 1.2); s.drag = 2.4; s.gravity = -14;
+    s.life = rng.range(0.18, 0.35); s.drag = 2.4; s.gravity = -14;
     s.rot = rng.float() * TWO_PI; s.spin = rng.signed() * 18;
     if (rubber) {
       s.r0 = 0.09; s.g0 = 0.085; s.b0 = 0.08;
