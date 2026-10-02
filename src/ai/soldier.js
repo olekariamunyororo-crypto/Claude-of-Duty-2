@@ -86,7 +86,7 @@ const GEAR = {
   pad: [0.55, 0.55, 0.55],
   strap: [0.56, 0.56, 0.56],
   wrap: [0.56, 0.54, 0.50],
-  glove: [0.38, 0.372, 0.363],
+  glove: [0.58, 0.54, 0.46],
   boot: [0.22, 0.209, 0.198],
   lace: [0.21, 0.204, 0.198],
   // A hard ballistic mask is moulded polymer, not webbing: near-black with a
@@ -658,44 +658,46 @@ export function buildSoldier(name, { rng, materials }) {
   /* ---------------- hands + weapon ----------------------------------- */
   const bore = new THREE.Vector3(...BORE_DIR).normalize();
   const palmR = new THREE.Vector3(-0.55, 0.35, -0.75).normalize();
-  const palmL = new THREE.Vector3(0.25, 0.88, -0.40).normalize();
+  const palmL = new THREE.Vector3(0.15, 0.92, -0.35).normalize();
   const gripAxisR = new THREE.Vector3(0.18, 0.92, -0.34).normalize();
-  const gripAxisL = bore.clone().add(new THREE.Vector3(0.12, 0.08, 0)).normalize();
+  const gripAxisL = bore.clone().add(new THREE.Vector3(0.05, 0.18, 0.02)).normalize();
 
   B.add(P.glove(nz, wrR, [gripAxisR.x, gripAxisR.y, gripAxisR.z], [palmR.x, palmR.y, palmR.z], -1), {
-    material: 'boot',
+    material: 'gear',
     bones: ['HandR', 'ForearmR'],
     bias: [1, 0.35],
     colour: GEAR.glove,
-    grime: 0.9,
-    dirt: 0.3,
-    dust: 0.25,
-    wear: 0.28,
+    grime: 0.55,
+    dirt: 0.12,
+    dust: 0.15,
+    wear: 0.18,
     name: 'gloveR',
   });
   B.add(P.knuckleGuard(wrR, [gripAxisR.x, gripAxisR.y, gripAxisR.z], [palmR.x, palmR.y, palmR.z]), {
     material: 'polymer',
     bone: 'HandR',
-    grime: 0.5,
-    wear: 0.35,
+    colour: [0.72, 0.70, 0.66],
+    grime: 0.35,
+    wear: 0.25,
     name: 'knuckleR',
   });
   B.add(P.glove(nz, wrL, [gripAxisL.x, gripAxisL.y, gripAxisL.z], [palmL.x, palmL.y, palmL.z], 1), {
-    material: 'boot',
+    material: 'gear',
     bones: ['HandL', 'ForearmL'],
     bias: [1, 0.35],
     colour: GEAR.glove,
-    grime: 0.9,
-    dirt: 0.3,
-    dust: 0.25,
-    wear: 0.28,
+    grime: 0.55,
+    dirt: 0.12,
+    dust: 0.15,
+    wear: 0.18,
     name: 'gloveL',
   });
   B.add(P.knuckleGuard(wrL, [gripAxisL.x, gripAxisL.y, gripAxisL.z], [palmL.x, palmL.y, palmL.z]), {
     material: 'polymer',
     bone: 'HandL',
-    grime: 0.5,
-    wear: 0.35,
+    colour: [0.72, 0.70, 0.66],
+    grime: 0.35,
+    wear: 0.25,
     name: 'knuckleL',
   });
 

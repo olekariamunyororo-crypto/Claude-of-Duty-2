@@ -67,7 +67,7 @@ function alongBore(t, dropY) {
 
 /** Firing hand (pistol grip) and support hand (handguard) in bind pose. */
 export const GRIP_R = alongBore(0.26, 0.095);
-export const GRIP_L = alongBore(0.40, 0.078);
+export const GRIP_L = alongBore(0.38, 0.088);
 
 const SHOULDER_R = [-0.172, 1.425, 0.004];
 const SHOULDER_L = [0.172, 1.425, 0.004];
