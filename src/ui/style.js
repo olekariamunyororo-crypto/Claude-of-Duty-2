@@ -318,6 +318,71 @@ const CSS = `
   min-width: calc(7px * var(--k)); text-align:left; }
 .ow-slot.empty { opacity:.34; }
 
+
+/* ============================================================== scope (ADS) */
+.ow-scope {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.08s linear;
+  z-index: 40;
+}
+.ow-scope.on { opacity: 1; }
+.ow-scope-mask {
+  position: absolute; inset: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    transparent 0%,
+    transparent min(38vh, 28vw),
+    rgba(0,0,0,0.55) min(41vh, 30.5vw),
+    rgba(0,0,0,0.97) min(44vh, 33vw),
+    #000 100%
+  );
+}
+.ow-scope-ring {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: min(76vh, 56vw);
+  height: min(76vh, 56vw);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 calc(3px * var(--k)) rgba(0,0,0,0.9),
+    inset 0 0 calc(28px * var(--k)) rgba(0,0,0,0.65),
+    0 0 0 200vmax #000;
+}
+.ow-scope-cross {
+  position: absolute; left: 50%; top: 50%;
+  width: min(76vh, 56vw);
+  height: min(76vh, 56vw);
+  transform: translate(-50%, -50%);
+}
+.ow-scope-cross::before,
+.ow-scope-cross::after {
+  content: "";
+  position: absolute;
+  background: rgba(8, 10, 12, 0.92);
+  left: 50%; top: 50%;
+}
+.ow-scope-cross::before {
+  width: 100%;
+  height: max(1.5px, calc(1.6px * var(--k)));
+  transform: translate(-50%, -50%);
+}
+.ow-scope-cross::after {
+  width: max(1.5px, calc(1.6px * var(--k)));
+  height: 100%;
+  transform: translate(-50%, -50%);
+}
+.ow-scope-dot {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: max(4px, calc(5px * var(--k)));
+  height: max(4px, calc(5px * var(--k)));
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgba(0,0,0,0.95);
+}
 /* ============================================================== killfeed */
 .ow-killfeed {
   position:absolute; right:var(--pad); top:calc(var(--pad) + 118px * var(--k));

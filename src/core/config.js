@@ -102,7 +102,7 @@ export const DEFAULTS = {
   physicsHz: PHYSICS_HZ,
   maxSubsteps: MAX_SUBSTEPS,
   fov: 80, // horizontal-ish vertical FOV, CoD default feel
-  adsFovScale: 0.72,
+  adsFovScale: 0.48,
   sensitivity: 0.0022,
   adsSensScale: 0.65,
   invertY: false,

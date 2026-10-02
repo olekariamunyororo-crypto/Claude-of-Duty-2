@@ -82,6 +82,12 @@ export class UiSystem {
     this.markers = new WorldMarkers(this.worldLayer, this.rng.fork());
     this.arcs = new DamageArcs(this.centreLayer);
     this.crosshair = new Crosshair(this.centreLayer);
+    this.scope = el('div', 'ow-scope', this.centreLayer);
+    el('div', 'ow-scope-mask', this.scope);
+    el('div', 'ow-scope-ring', this.scope);
+    el('div', 'ow-scope-cross', this.scope);
+    el('div', 'ow-scope-dot', this.scope);
+    this._scopeOn = false;
     this.hit = new Hitmarkers(this.centreLayer);
     this.minimap = new Minimap(this.chromeLayer, this.rng.fork());
     this.compass = new Compass(this.chromeLayer);
@@ -114,6 +120,7 @@ export class UiSystem {
       sprint: false,
       crouch: false,
       ads: false,
+      adsProgress: 0,
       airborne: false,
       baseSpread: 5.5,
       scoreUs: 0,
@@ -449,6 +456,8 @@ export class UiSystem {
       if (ps.sprint !== undefined) s.sprint = !!ps.sprint;
       if (ps.crouch !== undefined) s.crouch = !!ps.crouch;
       if (ps.ads !== undefined) s.ads = !!ps.ads;
+      if (ps.adsProgress !== undefined) s.adsProgress = +ps.adsProgress;
+      else if (ps.adsAmount !== undefined) s.adsProgress = +ps.adsAmount;
       if (ps.airborne !== undefined) s.airborne = !!ps.airborne;
     } else if (player && typeof player.health === 'number') {
       s.health = player.health;
@@ -506,6 +515,15 @@ export class UiSystem {
     setStyle(this.centreLayer, 'opacity', this.hudVisible.toFixed(3));
 
     this.crosshair.update(dt, s);
+    {
+      const adsAmt = s.adsProgress ?? (s.ads ? 1 : 0);
+      const show = adsAmt > 0.55;
+      if (show !== this._scopeOn) {
+        this._scopeOn = show;
+        this.scope.classList.toggle('on', show);
+      }
+      if (show) this.scope.style.opacity = String(Math.min(1, (adsAmt - 0.55) / 0.45));
+    }
     this.hit.update(dt);
     this.arcs.update(dt, rx, rz, fx, fz);
     this.health.update(dt, s);
