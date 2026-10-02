@@ -251,7 +251,7 @@ function concrete(fx, p, n, inc, e) {
   }
 
   // spall: solid chips on the reflected cone, real ballistic arcs
-  const nChip = Math.round(9 * q) + 3;
+  const nChip = Math.max(1, Math.round(3 * q));
   for (let i = 0; i < nChip; i++) {
     cone(V2, rng, rx, ry, rz, 0.85, 1.4);
     const sp = rng.range(3.5, 9.5);
@@ -259,17 +259,17 @@ function concrete(fx, p, n, inc, e) {
     s.x = p.x + n.x * 0.01; s.y = p.y + n.y * 0.01; s.z = p.z + n.z * 0.01;
     s.vx = V2.x * sp; s.vy = V2.y * sp; s.vz = V2.z * sp;
     s.tile = P.CHIP;
-    s.size0 = rng.range(0.008, 0.026);
-    s.size1 = s.size0 * 0.9;
-    s.life = rng.range(0.5, 1.0);
-    s.drag = 0.35;
-    s.gravity = -19;
+    s.size0 = rng.range(0.006, 0.016);
+    s.size1 = s.size0 * 0.7;
+    s.life = rng.range(0.22, 0.45);
+    s.drag = 0.55;
+    s.gravity = -24;
     s.rot = rng.float() * TWO_PI;
     s.spin = rng.signed() * 22;
-    s.r0 = 0.5; s.g0 = 0.48; s.b0 = 0.45; s.i0 = 1;
-    s.r1 = 0.42; s.g1 = 0.4; s.b1 = 0.38; s.i1 = 1;
-    s.alphaCurve = 0.25;
-    s.soft = 0.06;
+    s.r0 = 0.72; s.g0 = 0.68; s.b0 = 0.62; s.i0 = 1;
+    s.r1 = 0.55; s.g1 = 0.52; s.b1 = 0.48; s.i1 = 1;
+    s.alphaCurve = 0.55;
+    s.soft = 0.08;
     s.seed = rng.float();
     fx.emitLit(s);
   }
@@ -369,7 +369,7 @@ function plaster(fx, p, n, inc, e) {
     s.soft = 0.09; s.turb = 0.06; s.turbFreq = 2; s.seed = rng.float();
     fx.emitLit(s);
   }
-  const nChip = Math.round(7 * q) + 2;
+  const nChip = Math.max(1, Math.round(2 * q));
   for (let i = 0; i < nChip; i++) {
     cone(V2, rng, rx, ry, rz, 0.95, 1.3);
     const sp = rng.range(2, 6);
@@ -377,12 +377,12 @@ function plaster(fx, p, n, inc, e) {
     s.x = p.x + n.x * 0.01; s.y = p.y + n.y * 0.01; s.z = p.z + n.z * 0.01;
     s.vx = V2.x * sp; s.vy = V2.y * sp; s.vz = V2.z * sp;
     s.tile = P.CHIP;
-    s.size0 = rng.range(0.007, 0.02); s.size1 = s.size0;
-    s.life = rng.range(0.5, 0.9); s.drag = 0.5; s.gravity = -19;
+    s.size0 = rng.range(0.005, 0.014); s.size1 = s.size0 * 0.7;
+    s.life = rng.range(0.2, 0.4); s.drag = 0.65; s.gravity = -24;
     s.rot = rng.float() * TWO_PI; s.spin = rng.signed() * 18;
-    s.r0 = 0.72; s.g0 = 0.65; s.b0 = 0.52;
-    s.r1 = 0.64; s.g1 = 0.575; s.b1 = 0.46;
-    s.alphaCurve = 0.25; s.soft = 0.06; s.seed = rng.float();
+    s.r0 = 0.78; s.g0 = 0.72; s.b0 = 0.62;
+    s.r1 = 0.6; s.g1 = 0.55; s.b1 = 0.48;
+    s.alphaCurve = 0.55; s.soft = 0.08; s.seed = rng.float();
     fx.emitLit(s);
   }
   // 0.3 s directional ejecta along the reflected ray

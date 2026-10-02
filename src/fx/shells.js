@@ -16,8 +16,8 @@ import { resetSpawn } from './particles.js';
  * drawing marks and extractor scuffing) so it catches the sun as it spins.
  */
 
-const CAPACITY = 14;
-const LIFETIME = 9.0;
+const CAPACITY = 8;
+const LIFETIME = 3.5;
 const FADE = 0.7;
 /** Length of the modelled case (5.56x45), in metres — the scale=1 reference. */
 const CASE_LEN = 0.045;
