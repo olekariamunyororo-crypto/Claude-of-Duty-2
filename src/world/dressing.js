@@ -1112,7 +1112,7 @@ function palms(A, rng) {
     for (let i = 0; i < rng.int(3, 7); i++) {
       const a = rng.float() * 6.28;
       const r = rng.range(0.4, 1.2);
-      A.put('weeds', x + Math.cos(a) * r, y + 0.02, z + Math.sin(a) * r, rng.float() * 6.28, rng.range(0.7, 1.3), [
+      A.put('rock_a', x + Math.cos(a) * r, y + 0.02, z + Math.sin(a) * r, rng.float() * 6.28, rng.range(0.7, 1.3), [
         1,
         1.2,
         1,
@@ -1152,7 +1152,7 @@ function streetLamps(A, rng) {
       const px = x + Math.cos(a) * r;
       const pz = z + Math.sin(a) * r;
       A.put(
-        rng.pick(['litter', 'brick_b', 'can', 'weeds']),
+        rng.pick(['litter', 'brick_b', 'can', 'rock_b']),
         px,
         groundY(px, pz) + 0.02,
         pz,
@@ -1743,14 +1743,13 @@ export function scatterDebris(A, rng) {
     const y = groundY(x, z);
     const pick = rng.float();
     let id;
-    if (pick < 0.3) id = 'litter';
-    else if (pick < 0.46) id = rng.pick(['brick_a', 'brick_b']);
-    else if (pick < 0.58) id = rng.pick(['rock_a', 'rock_b']);
-    else if (pick < 0.68) id = 'weeds';
+    if (pick < 0.32) id = 'litter';
+    else if (pick < 0.5) id = rng.pick(['brick_a', 'brick_b']);
+    else if (pick < 0.66) id = rng.pick(['rock_a', 'rock_b']);
     else if (pick < 0.76) id = rng.pick(['can', 'bottle']);
-    else if (pick < 0.84) id = rng.pick(['plank_a', 'plank_b']);
-    else if (pick < 0.9) id = 'cinder';
-    else if (pick < 0.95) id = rng.pick(['box_card_a', 'box_card_b']);
+    else if (pick < 0.86) id = rng.pick(['plank_a', 'plank_b']);
+    else if (pick < 0.92) id = 'cinder';
+    else if (pick < 0.97) id = rng.pick(['box_card_a', 'box_card_b']);
     else id = rng.pick(['tyre_small', 'bucket', 'crate_b', 'slab_shard']);
     A.put(id, x, y + 0.015, z, rng.float() * 6.28, rng.range(0.65, 1.25), [
       1,
@@ -1765,7 +1764,7 @@ export function scatterDebris(A, rng) {
     const z = rng.range(zMin + 1, zMax - 1);
     if (!isOpen(x, z, 0.05)) continue;
     A.put(
-      rng.pick(['litter', 'can', 'rock_b', 'brick_b', 'litter', 'bottle', 'weeds']),
+      rng.pick(['litter', 'can', 'rock_b', 'brick_b', 'litter', 'bottle', 'rock_a']),
       x,
       groundY(x, z) + 0.012,
       z,
@@ -1792,8 +1791,8 @@ export function scatterDebris(A, rng) {
       if (pick < 0.2) id = 'litter';
       else if (pick < 0.34) id = rng.pick(['brick_a', 'brick_b', 'cinder']);
       else if (pick < 0.46) id = rng.pick(['rock_a', 'rock_b']);
-      else if (pick < 0.56) id = 'weeds';
-      else if (pick < 0.64) id = 'shrub';
+      else if (pick < 0.56) id = rng.pick(['rock_a', 'brick_b']);
+      else if (pick < 0.64) id = rng.pick(['rock_a', 'brick_a']);
       else if (pick < 0.72) id = rng.pick(['plank_a', 'plank_b']);
       else if (pick < 0.8) id = rng.pick(['crate_a', 'crate_b', 'crate_flat', 'pallet']);
       else if (pick < 0.86) id = rng.pick(['barrel_rust', 'barrel_blue', 'barrel_wood']);
@@ -1828,7 +1827,7 @@ export function scatterDebris(A, rng) {
       : side * (kerb - rng.range(0.05, 0.35));
     if (!isOpen(x, z, 0.02)) continue;
     A.put(
-      rng.float() < 0.78 ? 'weeds' : 'shrub',
+      rng.float() < 0.78 ? 'rock_a' : 'rock_b',
       x,
       groundY(x, z) + 0.01,
       z,
@@ -2158,7 +2157,7 @@ export function buildGate(A, rng) {
     const pz = z + rng.range(-5, 5);
     if (Math.abs(px) > span / 2 && Math.abs(pz - z) < t / 2 + 0.3) continue;
     A.put(
-      rng.pick(['brick_a', 'brick_b', 'rock_b', 'litter', 'cinder', 'can', 'weeds', 'plank_b']),
+      rng.pick(['brick_a', 'brick_b', 'rock_b', 'litter', 'cinder', 'can', 'rock_a', 'plank_b']),
       px,
       groundY(px, pz) + 0.02,
       pz,

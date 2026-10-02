@@ -783,20 +783,8 @@ function palmFrond(rng, len = 2.6) {
 
 function shrub(rng, s = 0.8) {
   const list = [];
-  const n = 7;
-  for (let i = 0; i < n; i++) {
-    const q = new THREE.PlaneGeometry(s * rng.range(0.7, 1.15), s * rng.range(0.6, 1.0), 1, 1);
-    const m = mat(
-      rng.range(-s * 0.2, s * 0.2),
-      s * rng.range(0.28, 0.6),
-      rng.range(-s * 0.2, s * 0.2),
-      rng.float() * Math.PI,
-      rng.range(-0.4, 0.4),
-      rng.range(-0.3, 0.3)
-    );
-    q.applyMatrix4(m);
-    fillMasks(q, 0.2, 0.35, 0.2);
-    list.push(q);
+  for (let i = 0; i < 5; i++) {
+    list.push(rockGeometry(rng, s * rng.range(0.12, 0.28), 0, 0.55));
   }
   const g = mergeSimple(list);
   for (const q of list) q.dispose();
@@ -804,19 +792,7 @@ function shrub(rng, s = 0.8) {
 }
 
 function weedTuft(rng) {
-  const list = [];
-  const n = 4;
-  for (let i = 0; i < n; i++) {
-    const q = new THREE.PlaneGeometry(rng.range(0.18, 0.34), rng.range(0.14, 0.3), 1, 1);
-    q.applyMatrix4(
-      mat(rng.range(-0.06, 0.06), rng.range(0.07, 0.17), rng.range(-0.06, 0.06), rng.float() * 3.14, rng.range(-0.5, 0.5), 0)
-    );
-    fillMasks(q, 0.2, 0.5, 0.3);
-    list.push(q);
-  }
-  const g = mergeSimple(list);
-  for (const q of list) q.dispose();
-  return g;
+  return rockGeometry(rng, rng.range(0.06, 0.12), 0, 0.5);
 }
 
 function planter(rng) {

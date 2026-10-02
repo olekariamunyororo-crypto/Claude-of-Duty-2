@@ -68,8 +68,7 @@ export class FxSystem {
 
     /** Particles spawned per impact scale with the budget. */
     this.pScale = clamp(budget / 12000, 0.08, 1.25);
-    this.skipSolidDebris = !!(this.ctx.config?.mobile) || budget < 400;
-    this.skipSolidDebris = !!(this.ctx.config?.mobile) || budget < 400;
+    this.skipSolidDebris = true;
 
     const mk = (capacity, modeName, renderOrder) =>
       new ParticleLayer({
