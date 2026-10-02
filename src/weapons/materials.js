@@ -639,7 +639,7 @@ export const WEAPON_MATERIALS = {
       ...BASE,
       // Warm the baked weave as well as the tint: a cool-grey base modulated by
       // a warm tint still reads grey wherever the weave is light.
-      bake: { seed: 401, tintA: 0x453a30, tintB: 0x2a2320, size: 512 },
+      bake: { seed: 401, tintA: 0x6a5840, tintB: 0x3d3428, size: 512 },
       scale: 0.032,
       /**
        * MEASURED WITH A LIVE UNIFORM SWEEP, and this is the single most important
@@ -681,7 +681,7 @@ export const WEAPON_MATERIALS = {
        * the gun instead of separating from it. A glove and a combat shirt are the
        * same kit at the same wash; 0.19 lands the shell ~0.35 stop under the
        * sleeve, which is the interval the original note asked for. */
-      tint: c(0.19, 0.155, 0.127),
+      tint: c(0.28, 0.235, 0.185),
       // 0.9+ is non-negotiable: a glove has no gloss lobe at all. The floor
       // stops the fabric ORM dipping into anything that could catch a highlight.
       roughness: [0.92, 0.06, 0.78],
@@ -815,7 +815,7 @@ export const WEAPON_MATERIALS = {
     'fabric',
     {
       ...BASE,
-      bake: { seed: 503, tintA: 0x6e6047, tintB: 0x4c4231, size: 512 },
+      bake: { seed: 503, tintA: 0x7a6a48, tintB: 0x4a4030, size: 512 },
       // 0.09 -> 0.05: a 50 mm ripstop tile. At 0.09 the base weave was 2.2 px at
       // the distance the support forearm actually sits (0.38-0.5 m) and read as
       // one flat value; the detail layer below carries the thread, this carries
@@ -829,7 +829,7 @@ export const WEAPON_MATERIALS = {
        * garment than the gloves and it is the thing that should read as the
        * warmest object on the rig.
        */
-      tint: c(0.16, 0.152, 0.138),
+      tint: c(0.22, 0.20, 0.165),
       roughness: [0.95, 0.05, 0.8],
       normalStrength: 1.45,
       // ~6 mm ripstop grid at this tile, at full amplitude on both albedo and
