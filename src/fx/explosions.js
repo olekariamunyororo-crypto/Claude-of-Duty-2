@@ -1,4 +1,10 @@
 import { P, D } from './atlas.js';
+
+/** Mobile: drop solid CHIP/SPLINTER (floating black ovals). Dust/smoke stay. */
+function emitSolid(fx, s) {
+  if (fx.skipSolidDebris && (s.tile === P.CHIP || s.tile === P.SPLINTER)) return;
+  fx.emitLit(s);
+}
 import { resetSpawn } from './particles.js';
 import { V, V2, cone, discOn } from './util.js';
 
@@ -164,7 +170,7 @@ export function explode(fx, o) {
     s.alphaCurve = 0.3;
     s.soft = 0.06;
     s.seed = rng.float();
-    fx.emitLit(s);
+    emitSolid(fx, s);
   }
   // embers riding the debris
   for (let i = 0; i < Math.round(14 * q) + 5; i++) {

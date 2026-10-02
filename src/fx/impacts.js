@@ -1,4 +1,10 @@
 import { P, D } from './atlas.js';
+
+/** Mobile: drop solid CHIP/SPLINTER (floating black ovals). Dust/smoke stay. */
+function emitSolid(fx, s) {
+  if (fx.skipSolidDebris && (s.tile === P.CHIP || s.tile === P.SPLINTER)) return;
+  fx.emitLit(s);
+}
 import { resetSpawn } from './particles.js';
 import { V, V2, C, C2, reflect, cone, discOn, blackbody, towardHemi, clampCone, COS55 } from './util.js';
 import { screenAngle } from './muzzle.js';
@@ -271,7 +277,7 @@ function concrete(fx, p, n, inc, e) {
     s.alphaCurve = 0.55;
     s.soft = 0.08;
     s.seed = rng.float();
-    fx.emitLit(s);
+    emitSolid(fx, s);
   }
 
   // aggregate sparks — concrete has flint in it, you see a few every hit
@@ -383,7 +389,7 @@ function plaster(fx, p, n, inc, e) {
     s.r0 = 0.78; s.g0 = 0.72; s.b0 = 0.62;
     s.r1 = 0.6; s.g1 = 0.55; s.b1 = 0.48;
     s.alphaCurve = 0.55; s.soft = 0.08; s.seed = rng.float();
-    fx.emitLit(s);
+    emitSolid(fx, s);
   }
   // 0.3 s directional ejecta along the reflected ray
   for (let i = 0; i < Math.round(4 * q) + 2; i++) {
@@ -568,7 +574,7 @@ function wood(fx, p, n, inc, e) {
     s.r0 = 0.44; s.g0 = 0.3; s.b0 = 0.16;
     s.r1 = 0.36; s.g1 = 0.24; s.b1 = 0.13;
     s.alphaCurve = 0.25; s.soft = 0.06; s.seed = rng.float();
-    fx.emitLit(s);
+    emitSolid(fx, s);
   }
   const nDust = Math.round(5 * q) + 2;
   for (let i = 0; i < nDust; i++) {
@@ -641,7 +647,7 @@ function ground(fx, p, n, inc, e, sand) {
     s.r0 = cr * 1.1; s.g0 = cg * 1.1; s.b0 = cb * 1.1;
     s.r1 = cr * 0.9; s.g1 = cg * 0.9; s.b1 = cb * 0.9;
     s.alphaCurve = 0.7; s.soft = 0.08; s.seed = rng.float();
-    fx.emitLit(s);
+    emitSolid(fx, s);
   }
   // The crater a rifle round digs in soil is 8-15 cm, not a third of a metre;
   // the third of a metre is the *dust* it kicks over the top of it.
@@ -688,7 +694,7 @@ function glass(fx, p, n, inc, e) {
     s.r0 = 0.72; s.g0 = 0.8; s.b0 = 0.84;
     s.r1 = 0.6; s.g1 = 0.68; s.b1 = 0.72;
     s.alpha = 0.85; s.alphaCurve = 0.3; s.soft = 0.06; s.seed = rng.float();
-    fx.emitLit(s);
+    emitSolid(fx, s);
     // the glint that sells glass: a bright specular twinkle riding the shard
     if (rng.float() < 0.55) {
       s.tile = P.SPARK;
@@ -859,7 +865,7 @@ function foliage(fx, p, n, inc, e) {
     s.r0 = 0.14; s.g0 = 0.22; s.b0 = 0.08;
     s.r1 = 0.11; s.g1 = 0.17; s.b1 = 0.06;
     s.alphaCurve = 0.4; s.soft = 0.06; s.seed = rng.float();
-    fx.emitLit(s);
+    emitSolid(fx, s);
   }
 }
 
@@ -910,7 +916,7 @@ function soft(fx, p, n, inc, e, rubber) {
     }
     s.r1 = s.r0 * 0.9; s.g1 = s.g0 * 0.9; s.b1 = s.b0 * 0.9;
     s.alphaCurve = 0.35; s.soft = 0.06; s.seed = rng.float();
-    fx.emitLit(s);
+    emitSolid(fx, s);
   }
   fx.addDecal(p, n, { tile: D.TEAR, size: rng.range(0.09, 0.15), life: 80, roll: rng.float() * TWO_PI });
 }
