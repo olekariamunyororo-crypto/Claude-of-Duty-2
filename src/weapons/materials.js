@@ -743,7 +743,7 @@ export const WEAPON_MATERIALS = {
       // rather than as bolted-on plate. Recalibrated with the shell (see `glove`):
       // 0.20 -> 0.072 lands the TPR at ~0.0024 linear, half a stop under the
       // glove's 0.0051 — the same interval as before, at a readable exposure.
-      tint: c(0.118, 0.095, 0.08),
+      tint: c(0.14, 0.115, 0.09),
       roughness: [1.0, 0.0, 0.78],
       /**
        * 1.3 -> 0.7. At 1.3 the rubber surface's own relief was deep enough that

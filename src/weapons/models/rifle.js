@@ -433,9 +433,9 @@ export function buildRifle() {
        * uses less curl, so the contact is preserved.
        */
       gripL: {
-        pos: [-0.1, 0.0734, handZ + 0.0252],
-        finger: [0.8977, -0.3267, -0.2955],
-        back: [-0.2784, -0.7648, 0.581],
+        pos: [-0.092, 0.068, handZ + 0.018],
+        finger: [0.92, -0.28, -0.27],
+        back: [-0.22, -0.72, 0.66],
       },
       /**
        * The handguard's collision profile, for the build-time fingertip contact
